@@ -57,10 +57,11 @@ class AutoMLRequest(BaseModel):
     clean_first    : bool  = True
 
 
+from fastapi.responses import FileResponse
+
 @app.get("/")
 def home():
-    return {"status": "running"}
-
+    return FileResponse("static/index.html")
 
 @app.get("/health")
 def health():
@@ -377,6 +378,5 @@ def download_pbi_template(req: PBITemplateRequest):
     except Exception as e:
         traceback.print_exc()
         return {"error": str(e)}
-# Serve static files (our HTML frontend)
+    
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
