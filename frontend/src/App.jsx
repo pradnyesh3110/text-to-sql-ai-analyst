@@ -8,7 +8,7 @@ import SchemaViewer from "./SchemaViewer"
 import MultiUpload  from "./MultiUpload"
 import EDAReport    from "./EDAReport"
 import AutoMLPanel  from "./AutoMLPanel"
-import PredictPanel from "./PredictPanel"
+import PredictPanel from "./predictpanel";
 
 // ── Nav tabs ────────────────────────────────────
 const TABS = [
