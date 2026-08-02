@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Data Analyst</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #334155;
+        }
+        h1 { font-size: 2.5rem; color: #7c3aed; margin-bottom: 8px; }
+        .subtitle { color: #94a3b8; font-size: 1.1rem; }
+        
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .card h2 {
+            font-size: 1.2rem;
+            color: #a78bfa;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="file"] {
+            color: #cbd5e1;
+            padding: 10px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 18px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            color: #f1f5f9;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus { border-color: #7c3aed; }
+        
+        button {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+        button:hover { background: #6d28d9; transform: translateY(-1px); }
+        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+        
+        .status {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .status.success { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+        .status.error { background: #450a0a; color: #fca5a5; border: 1px solid #dc2626; }
+        .status.info { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; }
+        
+        .sql-box {
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: #6ee7b7;
+            overflow-x: auto;
+            margin: 16px 0;
+            white-space: pre-wrap;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.9rem;
+        }
+        th {
+            background: #334155;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #c4b5fd;
+            border-bottom: 2px solid #475569;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #334155;
+            color: #cbd5e1;
+        }
+        tr:hover { background: #252f47; }
+        
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .query-row { display: flex; gap: 12px; align-items: stretch; }
+        .query-row input { flex: 1; }
+        
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid #334155;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 AI Data Analyst</h1>
+            <p class="subtitle">Upload data → Ask in English → Get SQL + Results</p>
+        </header>
+
+        <!-- UPLOAD -->
+        <div class="card">
+            <h2>📁 Upload Your Data</h2>
+            <p style="color:#94a3b8; margin-bottom:12px;">CSV, Excel, JSON, PDF, TSV supported</p>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.pdf,.tsv,.txt">
+            <button onclick="uploadFile()" id="uploadBtn">Upload File</button>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <!-- QUERY -->
+        <div class="card">
+            <h2>💬 Ask a Question</h2>
+            <div class="query-row">
+                <input type="text" id="questionInput" placeholder="e.g. How many rows? Which product has highest sales?" onkeypress="if(event.key==='Enter')askQuestion()">
+                <button onclick="askQuestion()" id="askBtn" style="margin-top:0;">Ask →</button>
+            </div>
+            <div id="queryStatus"></div>
+            
+            <div id="resultArea" class="hidden">
+                <p style="color:#a78bfa; font-weight:600; margin-top:20px;">Generated SQL:</p>
+                <div class="sql-box" id="sqlBox"></div>
+                
+                <p style="color:#a78bfa; font-weight:600; margin-top:20px;">Results:</p>
+                <div id="tableArea"></div>
+            </div>
+        </div>
+
+        <!-- SCHEMA -->
+        <div class="card">
+            <h2>🗂️ Database Schema</h2>
+            <button onclick="loadSchema()" id="schemaBtn">View Schema</button>
+            <div id="schemaArea" style="margin-top:16px;"></div>
+        </div>
+
+        <footer>
+            <p>🚀 Cloud Demo Mode — Powered by Groq AI</p>
+            <p style="margin-top:4px;">💡 Download the offline version for 100% privacy with local Ollama</p>
+        </footer>
+    </div>
+
+    <script>
+        const API = ""; // Empty = same origin (served from Render)
+        
+        function showStatus(id, msg, type) {
+            const el = document.getElementById(id);
+            el.className = "status " + type + " fade-in";
+            el.textContent = msg;
+        }
+        
+        function clearStatus(id) {
+            document.getElementById(id).className = "hidden";
+        }
+
+        async function uploadFile() {
+            const file = document.getElementById("fileInput").files[0];
+            if (!file) { showStatus("uploadStatus", "Please select a file first", "error"); return; }
+            
+            const btn = document.getElementById("uploadBtn");
+            btn.disabled = true; btn.textContent = "Uploading...";
+            clearStatus("uploadStatus");
+            
+            try {
+                const form = new FormData();
+                form.append("file", file);
+                const res = await fetch(API + "/upload", { method: "POST", body: form });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showStatus("uploadStatus", `✅ ${data.message} | ${data.columns.length} columns | ${data.rows} rows`, "success");
+                } else {
+                    showStatus("uploadStatus", "❌ " + data.error, "error");
+                }
+            } catch (e) {
+                showStatus("uploadStatus", "❌ Network error — backend may be waking up, wait 30s and retry", "error");
+            }
+            btn.disabled = false; btn.textContent = "Upload File";
+        }
+
+        async function askQuestion() {
+            const q = document.getElementById("questionInput").value.trim();
+            if (!q) { showStatus("queryStatus", "Please enter a question", "error"); return; }
+            
+            const btn = document.getElementById("askBtn");
+            btn.disabled = true; btn.textContent = "Thinking...";
+            clearStatus("queryStatus");
+            document.getElementById("resultArea").className = "hidden";
+            
+            try {
+                const res = await fetch(API + "/query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: q })
+                });
+                const data = await res.json();
+                
+                if (data.error) {
+                    showStatus("queryStatus", "❌ " + data.error, "error");
+                } else {
+                    document.getElementById("sqlBox").textContent = data.sql || "No SQL generated";
+                    
+                    const tableDiv = document.getElementById("tableArea");
+                    if (Array.isArray(data.result) && data.result.length > 0) {
+                        const cols = Object.keys(data.result[0]);
+                        let html = `<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+                        data.result.forEach(row => {
+                            html += `<tr>${cols.map(c => `<td>${row[c] ?? "—"}</td>`).join("")}</tr>`;
+                        });
+                        html += "</tbody></table>";
+                        tableDiv.innerHTML = html;
+                    } else {
+                        tableDiv.innerHTML = '<p style="color:#64748b;">No rows returned.</p>';
+                    }
+                    
+                    document.getElementById("resultArea").className = "fade-in";
+                }
+            } catch (e) {
+                showStatus("queryStatus", "❌ " + e.message, "error");
+            }
+            btn.disabled = false; btn.textContent = "Ask →";
+        }
+
+        async function loadSchema() {
+            const btn = document.getElementById("schemaBtn");
+            btn.disabled = true; btn.textContent = "Loading...";
+            
+            try {
+                const res = await fetch(API + "/schema");
+                const data = await res.json();
+                document.getElementById("schemaArea").innerHTML = `<pre style="background:#0f172a;padding:16px;border-radius:10px;border:1px solid #475569;overflow-x:auto;">${data.schema || "No schema available"}</pre>`;
+            } catch (e) {
+                document.getElementById("schemaArea").innerHTML = `<p style="color:#fca5a5;">Error loading schema</p>`;
+            }
+            btn.disabled = false; btn.textContent = "View Schema";
+        }
+    </script>
+</body>
+</html>

@@ -17,6 +17,7 @@ from backend.llm_client       import get_sql_from_llm
 from backend.sql_executor     import execute_with_retry
 from backend.schema_extractor import get_schema_text
 from backend.rag.retriever    import get_similar_examples
+from fastapi.staticfiles import StaticFiles
 
 print("=" * 50)
 print("Loaded:", __file__)
@@ -376,3 +377,6 @@ def download_pbi_template(req: PBITemplateRequest):
     except Exception as e:
         traceback.print_exc()
         return {"error": str(e)}
+# Serve static files (our HTML frontend)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
