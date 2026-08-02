@@ -1,0 +1,16 @@
+OrderID,OrderDate,CustomerName,City,State,Product,Category,Quantity,UnitPrice,Discount,Sales,Profit,PaymentMethod
+1001,2026-01-05,Rahul Sharma,Pune,Maharashtra,Laptop,Electronics,2,55000,5000,105000,18000,Credit Card
+1002,2026-01-07,Priya Patil,Mumbai,Maharashtra,Mouse,Electronics,3,700,50,2050,600,UPI
+1003,2026-01-09,Amit Joshi,Nagpur,Maharashtra,Keyboard,Electronics,2,1200,100,2300,700,Cash
+1004,2026-01-10,Neha Desai,Surat,Gujarat,Office Chair,Furniture,1,8500,500,8000,1800,Debit Card
+1005,2026-01-12,Rohan Kulkarni,Pune,Maharashtra,Desk,Furniture,1,12000,1000,11000,2500,UPI
+1006,2026-01-14,Sneha Gupta,Delhi,Delhi,Monitor,Electronics,2,15000,1000,29000,5500,Credit Card
+1007,2026-01-18,Vikram Singh,Jaipur,Rajasthan,Printer,Electronics,1,9500,500,9000,2000,Cash
+1008,2026-01-20,Anjali Verma,Hyderabad,Telangana,Laptop,Electronics,1,58000,3000,55000,9500,UPI
+1009,2026-01-21,Karan Mehta,Bangalore,Karnataka,Tablet,Electronics,4,18000,2000,70000,12000,Credit Card
+1010,2026-01-24,Pooja Nair,Kochi,Kerala,Bookshelf,Furniture,2,6500,500,12500,2700,Debit Card
+1011,2026-02-02,Rahul Sharma,Pune,Maharashtra,Monitor,Electronics,1,16000,1000,15000,3200,UPI
+1012,2026-02-04,Priya Patil,Mumbai,Maharashtra,Desk,Furniture,1,11000,500,10500,2400,Credit Card
+1013,2026-02-08,Amit Joshi,Nagpur,Maharashtra,Laptop,Electronics,1,60000,4000,56000,10000,Cash
+1014,2026-02-11,Neha Desai,Surat,Gujarat,Keyboard,Electronics,5,1100,100,5400,1400,UPI
+1015,2026-02-15,Rohan Kulkarni,Pune,Maharashtra,Office Chair,Furniture,2,8000,500,15500,3500,Debit Card
