@@ -7,7 +7,7 @@ from groq import Groq
 # ─── Config ───────────────────────────────────────────
 OLLAMA_URL   = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3.2"
-GROQ_MODEL   = "llama3-8b-8192"
+GROQ_MODEL   = "llama-3.1-8b-instant"
 
 # Detect if we're in cloud demo mode
 IS_DEMO = os.environ.get("DEMO_MODE", "false").lower() == "true"
