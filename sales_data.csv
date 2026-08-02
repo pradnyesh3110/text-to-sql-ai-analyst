@@ -1,0 +1,14 @@
+Date,Product,Region,Sales,Quantity,Category
+2024-01-01,Laptop,Pune,55000,2,Electronics
+2024-01-02,Phone,Mumbai,32000,3,Electronics
+2024-01-03,Tablet,Delhi,18000,1,Electronics
+2024-01-04,Chair,Pune,8000,5,Furniture
+2024-01-05,Desk,Mumbai,12000,2,Furnitureu
+
+2024-01-06,Laptop,Delhi,55000,1,Electronics
+2024-01-07,Phone,Pune,32000,4,Electronics
+2024-01-08,Chair,Mumbai,8000,3,Furniture
+2024-01-09,Tablet,Pune,18000,2,Electronics
+2024-01-10,Desk,Delhi,12000,1,Furniture
+2024-01-11,Laptop,Mumbai,55000,3,Electronics
+2024-01-12,Phone,Delhi,32000,2,Electronics

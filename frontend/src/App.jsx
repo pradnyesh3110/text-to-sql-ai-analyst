@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { uploadFile } from "./api"
+import { uploadFile, askQuestion } from "./api"
 import ChartPanel   from "./ChartPanel"
 import BatchPanel   from "./BatchPanel"
 import DAXPanel     from "./DAXPanel"
@@ -74,12 +74,7 @@ export default function App() {
     setQueryError(null)
     setResult(null)
     try {
-      const res = await fetch(`${API_BASE}/query`, {
-        method : "POST",
-        headers: { "Content-Type": "application/json" },
-        body   : JSON.stringify({ question })
-      })
-      const data = await res.json()
+      const data = await askQuestion(question)
       setResult(data)
     } catch (err) {
       setQueryError("Query failed — " + err.message)
@@ -396,32 +391,37 @@ export default function App() {
               <div style={s.card}>
                 <p style={s.sectionLabel}>Generated SQL:</p>
                 <pre style={s.sqlBox}>{result.sql}</pre>
-                {result.result?.rows?.length > 0 ? (
+                {Array.isArray(result.result) && result.result.length > 0 ? (
                   <>
-                    <ChartPanel columns={result.result.columns} rows={result.result.rows} />
-                    <p style={{ ...s.sectionLabel, marginTop:20 }}>
-                      Data — <span style={{ fontWeight:400, color:"#6B7280" }}>
-                        {result.result.rows.length} rows
-                      </span>
-                    </p>
-                    <div style={{ overflowX:"auto" }}>
-                      <table style={s.table}>
-                        <thead>
-                          <tr>{result.result.columns.map(c=>(
-                            <th key={c} style={s.th}>{c}</th>
-                          ))}</tr>
-                        </thead>
-                        <tbody>
-                          {result.result.rows.map((row,i)=>(
-                            <tr key={i} style={{ background:i%2===0?"#fff":"#FAFAFA" }}>
-                              {result.result.columns.map(c=>(
-                                <td key={c} style={s.td}>{row[c]??"—"}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    {(() => {
+                      const cols = Object.keys(result.result[0]);
+                      return (
+                        <>
+                          <ChartPanel columns={cols} rows={result.result} />
+                          <p style={{ ...s.sectionLabel, marginTop:20 }}>
+                            Data — <span style={{ fontWeight:400, color:"#6B7280" }}>
+                              {result.result.length} rows
+                            </span>
+                          </p>
+                          <div style={{ overflowX:"auto" }}>
+                            <table style={s.table}>
+                              <thead>
+                                <tr>{cols.map(c => <th key={c} style={s.th}>{c}</th>)}</tr>
+                              </thead>
+                              <tbody>
+                                {result.result.map((row, i) => (
+                                  <tr key={i} style={{ background: i%2===0 ? "#fff" : "#FAFAFA" }}>
+                                    {cols.map(c => (
+                                      <td key={c} style={s.td}>{row[c] ?? "—"}</td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </>
                 ) : (
                   <p style={{ color:"#9CA3AF", fontSize:13 }}>No rows returned.</p>

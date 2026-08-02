@@ -1,0 +1,30 @@
+# Create slim file for Render
+@"
+fastapi==0.139.0
+uvicorn==0.51.0
+groq
+python-jose[cryptography]
+passlib[bcrypt]
+SQLAlchemy==2.0.51
+psycopg2-binary==2.9.12
+python-multipart==0.0.32
+python-dotenv==1.2.2
+requests==2.34.2
+pydantic==2.13.4
+pydantic-settings==2.14.2
+starlette==1.3.1
+typing_extensions==4.16.0
+anyio==4.14.1
+sniffio==1.3.1
+idna==3.18
+certifi==2026.6.17
+charset-normalizer==3.4.9
+urllib3==2.7.0
+httpx==0.28.1
+httpcore==1.0.9
+h11==0.16.0
+"@ | Out-File -Encoding utf8 requirements-render.txt
+
+git add requirements-render.txt
+git commit -m "add slim requirements for render"
+git push origin main

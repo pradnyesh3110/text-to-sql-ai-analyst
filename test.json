@@ -1,0 +1,7 @@
+[
+  {"product": "Laptop", "sales": 55000, "region": "Pune", "date": "2024-01-01"},
+  {"product": "Phone",  "sales": 32000, "region": "Mumbai", "date": "2024-01-02"},
+  {"product": "Tablet", "sales": 18000, "region": "Delhi", "date": "2024-01-03"},
+  {"product": "Chair",  "sales": 8000,  "region": "Pune", "date": "2024-01-04"},
+  {"product": "Desk",   "sales": 12000, "region": "Mumbai", "date": "2024-01-05"}
+]

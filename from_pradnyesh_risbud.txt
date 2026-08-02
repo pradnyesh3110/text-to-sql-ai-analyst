@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Friendship Day —  Edition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fef9f3;
+    --bg-2: #fff5eb;
+    --text: #2d2a26;
+    --text-2: #6b6560;
+    --text-3: #a39e99;
+    --accent: #e07a5f;
+    --accent-2: #f4a261;
+    --accent-light: #fff0e8;
+    --card: #ffffff;
+    --border: #f0e6dc;
+    --shadow: 0 2px 8px rgba(45,42,38,0.06);
+    --shadow-hover: 0 6px 20px rgba(45,42,38,0.1);
+  }
+
+  body {
+    font-family: 'Poppins', 'Noto Sans Devanagari', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .app { max-width: 520px; margin: 0 auto; min-height: 100vh; }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    gap: 6px;
+    padding: 14px 16px 10px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  .nav-btn:hover { background: var(--accent-light); color: var(--accent); }
+  .nav-btn.active { background: var(--card); color: var(--accent); box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .nav-btn svg { width: 16px; height: 16px; }
+
+  /* Pages */
+  .page { display: none; animation: fadeIn 0.35s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Hero */
+  .hero { padding: 36px 24px 28px; text-align: center; }
+  .hero-emoji { font-size: 56px; line-height: 1; margin-bottom: 14px; animation: bounce 2s ease infinite; }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .hero h1 { font-size: 26px; font-weight: 700; line-height: 1.2; color: var(--text); margin-bottom: 10px; }
+  .hero p { font-size: 15px; color: var(--text-2); line-height: 1.6; max-width: 340px; margin: 0 auto; }
+
+  /* Cards */
+  .section { padding: 0 16px 24px; }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px 18px 18px 16px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: all 0.25s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--accent-2); }
+  .card-icon {
+    width: 44px; height: 44px; min-width: 44px;
+    border-radius: 12px;
+    background: var(--accent-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .card-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .card-sub { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+
+  /* Wish Grid */
+  .wish-grid { padding: 8px 16px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .wish-bubble {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px 12px;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: all 0.25s ease;
+    cursor: default;
+  }
+  .wish-bubble:hover { transform: scale(1.03); box-shadow: var(--shadow-hover); border-color: var(--accent-2); }
+  .wish-bubble .w-emoji { font-size: 32px; display: block; margin-bottom: 10px; }
+  .wish-bubble .w-text { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.5; }
+
+  /* Poems */
+  .poem-list { padding: 8px 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .poem-card {
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: all 0.25s ease;
+    cursor: pointer;
+  }
+  .poem-card:hover { border-color: var(--accent-2); box-shadow: var(--shadow-hover); }
+  .poem-header {
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .poem-name { font-size: 16px; font-weight: 600; color: var(--text); }
+  .poem-tag {
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .poem-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+  }
+  .poem-body.open { max-height: 800px; padding: 0 18px 18px; }
+  .poem-text {
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--text-2);
+    white-space: pre-line;
+    font-family: 'Noto Sans Devanagari', 'Poppins', sans-serif;
+  }
+  .poem-text b { color: var(--accent); font-weight: 600; }
+  .poem-text em { color: var(--text-3); font-style: italic; }
+
+  /* Footer */
+  .footer { text-align: center; padding: 20px 16px 30px; font-size: 12px; color: var(--text-3); }
+
+  /* Floating hearts */
+  .heart-float {
+    position: fixed;
+    font-size: 20px;
+    pointer-events: none;
+    animation: floatUp 4s ease-in forwards;
+    opacity: 0.7;
+    z-index: 50;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 0.7; }
+    100% { transform: translateY(-120vh) scale(0.5); opacity: 0; }
+  }
+
+  /* Responsive */
+  @media (max-width: 400px) {
+    .hero h1 { font-size: 22px; }
+    .nav-btn { font-size: 12px; padding: 8px 4px; }
+    .wish-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="app">
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showPage('home')" id="nav-home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button class="nav-btn" onclick="showPage('wishes')" id="nav-wishes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Wishes
+  </button>
+  <button class="nav-btn" onclick="showPage('poems')" id="nav-poems">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    Marathi Poems
+  </button>
+</div>
+
+<!-- Page 1: Home -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-emoji">🧸💛</div>
+    <h1>Happy Friendship Day,</h1>
+    <p>To the one who makes every ordinary day feel like a warm hug. This little corner is just for you.</p>
+  </div>
+  <div class="section">
+    <div class="card" onclick="showPage('wishes')">
+      <div class="card-icon">💌</div>
+      <div>
+        <div class="card-title">best Wishes</div>
+        <div class="card-sub">Cute little notes to make your bestie smile like a pookie bear.</div>
+      </div>
+    </div>
+    <div class="card" onclick="showPage('poems')">
+      <div class="card-icon">📖</div>
+      <div>
+        <div class="card-title">Marathi Poems</div>
+        <div class="card-sub">Heartfelt मराठी कविता about the beautiful bond of close friendship.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 2: Wishes -->
+<div id="page-wishes" class="page">
+  <div class="hero" style="padding-bottom: 10px;">
+    <div class="hero-emoji">💌✨</div>
+    <h1>Best Wishes</h1>
+    <p>Little bundles of love for your forever friend.</p>
+  </div>
+  <div class="wish-grid">
+    <div class="wish-bubble"><span class="w-emoji">🧸</span><span class="w-text">You are my comfort person, my forever.</span></div>
+    <div class="wish-bubble"><span class="w-emoji">🌻</span><span class="w-text">Thanks for being the sunshine on my cloudy days.</span></div>
+    <div class="wish-bubble"><span class="w-emoji">🍪</span><span class="w-text">If friendship was a cookie, ours would be extra chocolatey.</span></div>
+    <div class="wish-bubble"><span class="w-emoji">🌙</span><span class="w-text">Even the moon is jealous of how we light up each other's world.</span></div>
+    <div class="wish-bubble"><span class="w-emoji">🎀</span><span class="w-text">You make my heart do a little happy dance every single day.</span></div>
+    <div class="wish-bubble"><span class="w-emoji">☕</span><span class="w-text">Our chai-time talks are my favourite therapy sessions.</span></div>
+    <div class="wish-bubble"><span class="w-emoji">🌈</span><span class="w-text">You are the colour in my black-and-white days.</span></div>
+    <div class="wish-bubble"><span class="w-emoji">🔒</span><span class="w-text">Locked in as besties, no key, no expiry date.</span></div>
+  </div>
+</div>
+
+<!-- Page 3: Marathi Poems -->
+<div id="page-poems" class="page">
+  <div class="hero" style="padding-bottom: 10px;">
+    <div class="hero-emoji">📖🌸</div>
+    <h1>मैत्रीच्या कविता</h1>
+    <p>Tap a poem to unfold its heart.</p>
+  </div>
+  <div class="poem-list">
+
+    <div class="poem-card" onclick="togglePoem(this)">
+      <div class="poem-header">
+        <span class="poem-name">मैत्रीचं नातं</span>
+        <span class="poem-tag">मैत्री</span>
+      </div>
+      <div class="poem-body">
+        <div class="poem-text">रक्ताचं नाही, पण जिव्हाळ्याचं,
+हृदयाशी जोडलेलं हे नातं.
+कधी भांडणं होतील, कधी राग होईल,
+पण मैत्रीचा धागा कधी तुटणार नाही.
+
+<b>तू माझा मित्र नाही, तू माझं कुटुंब आहेस.</b>
+
+जग बदललं तरी आपली मैत्री कायम राहील,
+कारण खरी मैत्री ही वेळेच्या चाचणीतून येते,
+आणि आपण ती उत्तीर्ण झालो आहोत.</div>
+      </div>
+    </div>
+
+    <div class="poem-card" onclick="togglePoem(this)">
+      <div class="poem-header">
+        <span class="poem-name">जिवलग मित्रा</span>
+        <span class="poem-tag">जिवलग</span>
+      </div>
+      <div class="poem-body">
+        <div class="poem-text">जेव्हा डोळे भरून येतात,
+आणि शब्द कमी पडतात,
+तेव्हा फक्त तुझी आठवण येते,
+माझ्या जिवलग मित्रा.
+
+<b>तू माझ्या आनंदात हसतोस,
+माझ्या दुःखात रडतोस,
+असा मित्र मिळणं हे भाग्यच.</b>
+
+गंमत, चेष्टा, राग, मैत्री,
+सगळं मिसळून आपली यारी.
+जगात कोणीही येऊ दे जाऊ दे,
+पण तू कायम राहू दे बरं का?</div>
+      </div>
+    </div>
+
+    <div class="poem-card" onclick="togglePoem(this)">
+      <div class="poem-header">
+        <span class="poem-name">आठवणींचं झाड</span>
+        <span class="poem-tag">आठवणी</span>
+      </div>
+      <div class="poem-body">
+        <div class="poem-text">आपण एकत्र जमलो,
+एकट्याने काहीतरी केलं,
+तसं काहीच नाही.
+
+<b>कारण खरी मजा तर आपल्या यारीतच होती.</b>
+
+स्कूलची गंमत, कॉलेजची धमाल,
+रस्त्यावरची फिरणी, रात्रीची बोलणी,
+सगळ्या आठवणी एकत्र जमल्या,
+तर एक मोठं झाड उभं राहतं,
+ज्याला म्हणतात — आपली मैत्री.
+
+वर्षं जाऊ देत, पण हे झाड कायम हिरवं राहू दे.</div>
+      </div>
+    </div>
+
+    <div class="poem-card" onclick="togglePoem(this)">
+      <div class="poem-header">
+        <span class="poem-name">मित्र म्हणजे...</span>
+        <span class="poem-tag">वर्णन</span>
+      </div>
+      <div class="poem-body">
+        <div class="poem-text">मित्र म्हणजे पावसाळ्यातलं चहा,
+मित्र म्हणजे रात्रीचं आकाश,
+मित्र म्हणजे कधीही सोडून न जाणारं हात,
+मित्र म्हणजे माझ्या जीवनाचा सगळ्यात सुंदर भाग.
+
+<b>तू नसतोस तर हसणं अर्धं वाटतं,
+तू नसतोस तर गंमत रंगत नाही,
+तू नसतोस तर मी अपूर्ण आहे.</b>
+
+म्हणूनच म्हणतो —
+तू माझा मित्र नाही,
+तू माझ्या अस्तित्वाचा भाग आहेस.</div>
+      </div>
+    </div>
+
+    <div class="poem-card" onclick="togglePoem(this)">
+      <div class="poem-header">
+        <span class="poem-name">एका पावसाळ्यात</span>
+        <span class="poem-tag">पावसाळा</span>
+      </div>
+      <div class="poem-body">
+        <div class="poem-text">पावसाच्या सरींमध्ये भिजत,
+रस्त्यावरच्या चहाच्या टपऱ्यावर,
+आपण बसलो होतो.
+
+<b>दोन चहा, एक पावसाळा,
+अन् काहीशी अनोखी मैत्री.</b>
+
+तू म्हणालास काहीतरी,
+मी हसलो,
+आणि त्या हसण्यातच
+आपली मैत्री अजून घट्ट झाली.
+
+आजही जेव्हा पाऊस पडतो,
+तेव्हा तुझी आठवण येते,
+आणि मनातून एकच आवाज येतो —
+"पुन्हा एकदा तसंच बसूया ना?"</div>
+      </div>
+    </div>
+
+    <div class="poem-card" onclick="togglePoem(this)">
+      <div class="poem-header">
+        <span class="poem-name">यारी दोस्ती</span>
+        <span class="poem-tag">यारी</span>
+      </div>
+      <div class="poem-body">
+        <div class="poem-text">कोणी म्हणतं मैत्री म्हणजे वेळ काढणं,
+कोणी म्हणतं मैत्री म्हणजे मदत करणं.
+पण मला माहिती आहे —
+
+<b>खरी मैत्री म्हणजे
+तुझ्या चेहऱ्यावरचं हसणं
+माझ्या चेहऱ्यावर हसणं आणतं.</b>
+
+आपली यारी ही असंच काहीतरी आहे.
+न बोलता समजणं,
+न विचारता मदत करणं,
+आणि न संपणारं प्रेम.
+
+तू माझा यार आहेस,
+आणि हे कायम राहणार.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">Made with Pradnyesh Risbud for my  bestie — Happy Friendship Day</div>
+
+</div>
+
+<script>
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function togglePoem(card) {
+    const body = card.querySelector('.poem-body');
+    const isOpen = body.classList.contains('open');
+    document.querySelectorAll('.poem-body').forEach(b => b.classList.remove('open'));
+    if (!isOpen) {
+      body.classList.add('open');
+      spawnHearts(card);
+    }
+  }
+
+  function spawnHearts(element) {
+    const rect = element.getBoundingClientRect();
+    const hearts = ['💛', '🧸', '✨', '🌸', '💌'];
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        const heart = document.createElement('div');
+        heart.className = 'heart-float';
+        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        heart.style.left = (rect.left + Math.random() * rect.width) + 'px';
+        heart.style.top = (rect.top + rect.height / 2) + 'px';
+        heart.style.fontSize = (16 + Math.random() * 12) + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 4000);
+      }, i * 150);
+    }
+  }
+
+  // Auto-play gentle heart animation on home page
+  setInterval(() => {
+    if (document.getElementById('page-home').classList.contains('active')) {
+      const heart = document.createElement('div');
+      heart.className = 'heart-float';
+      heart.textContent = ['💛', '🧸', '✨'][Math.floor(Math.random() * 3)];
+      heart.style.left = (Math.random() * window.innerWidth) + 'px';
+      heart.style.top = (window.innerHeight - 20) + 'px';
+      heart.style.fontSize = (14 + Math.random() * 10) + 'px';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 4000);
+    }
+  }, 3000);
+</script>
+
+</body>
+</html>
