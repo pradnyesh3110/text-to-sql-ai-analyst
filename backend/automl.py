@@ -1,4 +1,52 @@
 # backend/automl.py
+# backend/automl.py
+import os
+
+IS_DEMO = os.environ.get("DEMO_MODE", "false").lower() == "true"
+
+if IS_DEMO:
+    # Lightweight stub for demo
+    def analyze_dataset(df):
+        return {
+            "potential_targets": df.columns.tolist()[:3] if len(df.columns) > 0 else [],
+            "row_count": len(df),
+            "column_count": len(df.columns)
+        }
+    
+    def ask_ollama_for_recommendation(info):
+        return "regression"
+    
+    def run_automl(df, recommendation, target_accuracy=0.85):
+        return {
+            "error": "AutoML requires local deployment with sklearn/xgboost.",
+            "best_model": "N/A",
+            "best_accuracy_pct": "N/A"
+        }
+    
+    def predict_future_trend(df, periods=5):
+        return {
+            "error": "Prediction requires local deployment.",
+            "forecast": []
+        }
+
+else:
+    # Full imports for local version
+    import pandas as pd
+    import numpy as np
+    import json
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import LabelEncoder, StandardScaler
+    from sklearn.metrics import r2_score, mean_absolute_error, accuracy_score, f1_score
+    import warnings
+    warnings.filterwarnings("ignore")
+    
+    TRAIN_SIZE = 0.70
+    
+    # ... rest of your original automl.py code ...cd "C:\Users\admin\Desktop\claude project\text-to-sql"
+
+# Save the 4 files above (copy-paste into each file in VS Code)
+
+
 import pandas as pd
 import numpy as np
 import json
