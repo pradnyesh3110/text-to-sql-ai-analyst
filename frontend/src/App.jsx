@@ -9,7 +9,6 @@ import MultiUpload  from "./MultiUpload"
 import EDAReport    from "./EDAReport"
 import AutoMLPanel  from "./AutoMLPanel"
 import PredictPanel from "./predictpanel";
-
 // ── Nav tabs ────────────────────────────────────
 const TABS = [
   { id:"upload",    label:"📁 Upload",    desc:"Upload your data file" },
