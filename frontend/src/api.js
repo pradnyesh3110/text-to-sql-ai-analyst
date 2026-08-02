@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || "https://text-to-sql-ai-analyst-2.onrender.com
+const BASE = import.meta.env.VITE_API_URL || "https://text-to-sql-ai-analyst-2.onrender.com"
 
 export async function uploadFile(file) {
     const formData = new FormData()
