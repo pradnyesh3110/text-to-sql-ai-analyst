@@ -8,7 +8,11 @@ import SchemaViewer from "./SchemaViewer"
 import MultiUpload  from "./MultiUpload"
 import EDAReport    from "./EDAReport"
 import AutoMLPanel  from "./AutoMLPanel"
-import PredictPanel from "./predictpanel";
+import PredictPanel from "./predictpanel"
+
+// ── API Base URL ─────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_URL || "https://text-to-sql-ai-analyst-2.onrender.com"
+
 // ── Nav tabs ────────────────────────────────────
 const TABS = [
   { id:"upload",    label:"📁 Upload",    desc:"Upload your data file" },
@@ -22,7 +26,6 @@ const TABS = [
 ]
 
 export default function App() {
-
   const [activeTab,    setActiveTab]    = useState("upload")
   const [uploadStatus, setUploadStatus] = useState(null)
   const [uploadError,  setUploadError]  = useState(null)
@@ -37,8 +40,6 @@ export default function App() {
   const [qualityIssues,setQualityIssues]= useState([])
   const [fixStatus,    setFixStatus]    = useState(null)
   const [fixing,       setFixing]       = useState(false)
-  const [multiUploadData,setMultiUploadData]= useState(null)
-
 
   // ── Upload ──────────────────────────────────
   const handleUpload = async (e) => {
@@ -50,7 +51,6 @@ export default function App() {
     setResult(null)
     setQualityIssues([])
     setFixStatus(null)
-
     try {
       const data = await uploadFile(file)
       if (data.success) {
@@ -62,7 +62,7 @@ export default function App() {
         setUploadStatus(null)
       }
     } catch (err) {
-      setUploadError("Network error — make sure FastAPI is running")
+      setUploadError("Network error — backend may be starting up, wait 30 seconds and try again")
       setUploadStatus(null)
     }
   }
@@ -74,7 +74,7 @@ export default function App() {
     setQueryError(null)
     setResult(null)
     try {
-      const res = await fetch("http://127.0.0.1:8000/query", {
+      const res = await fetch(`${API_BASE}/query`, {
         method : "POST",
         headers: { "Content-Type": "application/json" },
         body   : JSON.stringify({ question })
@@ -82,7 +82,7 @@ export default function App() {
       const data = await res.json()
       setResult(data)
     } catch (err) {
-      setQueryError("Query failed — make sure FastAPI is running")
+      setQueryError("Query failed — " + err.message)
     }
     setLoading(false)
   }
@@ -91,7 +91,7 @@ export default function App() {
   const handleViewDashboard = async () => {
     setDbLoading(true)
     try {
-      const res  = await fetch("http://127.0.0.1:8000/query", {
+      const res  = await fetch(`${API_BASE}/query`, {
         method : "POST",
         headers: { "Content-Type": "application/json" },
         body   : JSON.stringify({ question: "show all data from user_data" })
@@ -109,7 +109,7 @@ export default function App() {
   const handleFixAll = async () => {
     setFixing(true)
     try {
-      const res  = await fetch("http://127.0.0.1:8000/clean", {
+      const res  = await fetch(`${API_BASE}/clean`, {
         method : "POST",
         headers: { "Content-Type": "application/json" },
         body   : JSON.stringify({ actions: qualityIssues })
@@ -161,32 +161,20 @@ export default function App() {
         }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{ fontSize:22 }}>🤖</span>
-            <span style={{
-              fontSize  : 18,
-              fontWeight: 700,
-              color     : "#fff"
-            }}>
+            <span style={{ fontSize:18, fontWeight:700, color:"#fff" }}>
               AI Data Analyst
             </span>
             {columns.length > 0 && (
               <span style={{
-                fontSize    : 11,
-                padding     : "2px 10px",
-                borderRadius: 20,
-                background  : "#2563EB",
-                color       : "#fff",
-                fontWeight  : 500
+                fontSize:11, padding:"2px 10px",
+                borderRadius:20, background:"#2563EB",
+                color:"#fff", fontWeight:500
               }}>
                 {columns.length} columns loaded
               </span>
             )}
           </div>
-
-          {/* Status indicator */}
-          <div style={{
-            fontSize: 11,
-            color   : "#94A3B8"
-          }}>
+          <div style={{ fontSize:11, color:"#94A3B8" }}>
             {uploadStatus
               ? <span style={{ color:"#4ADE80" }}>{uploadStatus}</span>
               : "No data loaded"}
@@ -195,11 +183,8 @@ export default function App() {
 
         {/* ── NAV TABS ── */}
         <div style={{
-          maxWidth  : 1100,
-          margin    : "0 auto",
-          display   : "flex",
-          gap       : 2,
-          overflowX : "auto"
+          maxWidth:1100, margin:"0 auto",
+          display:"flex", gap:2, overflowX:"auto"
         }}>
           {TABS.map(tab => (
             <button
@@ -209,12 +194,11 @@ export default function App() {
                 padding     : "10px 16px",
                 border      : "none",
                 background  : "transparent",
-                color       : activeTab === tab.id
-                  ? "#fff" : "#94A3B8",
+                color       : activeTab===tab.id ? "#fff" : "#94A3B8",
                 fontSize    : 13,
-                fontWeight  : activeTab === tab.id ? 600 : 400,
+                fontWeight  : activeTab===tab.id ? 600 : 400,
                 cursor      : "pointer",
-                borderBottom: activeTab === tab.id
+                borderBottom: activeTab===tab.id
                   ? "2px solid #7F77DD"
                   : "2px solid transparent",
                 whiteSpace  : "nowrap",
@@ -228,27 +212,20 @@ export default function App() {
 
       {/* ── PAGE CONTENT ── */}
       <div style={{
-        maxWidth : 900,
-        margin   : "0 auto",
-        padding  : "24px 16px 80px"
+        maxWidth:900, margin:"0 auto",
+        padding:"24px 16px 80px"
       }}>
 
         {/* ── UPLOAD PAGE ── */}
         {activeTab === "upload" && (
           <div>
-            <PageTitle
-              icon="📁"
-              title="Upload Your Data"
-              desc="Upload any CSV, Excel, JSON, PDF or TSV file"
-            />
+            <PageTitle icon="📁" title="Upload Your Data"
+              desc="Upload any CSV, Excel, JSON, PDF or TSV file" />
 
-            {/* Single file upload */}
             <div style={s.card}>
               <p style={s.stepLabel}>Single File</p>
               <h2 style={s.cardTitle}>Choose a file</h2>
-              <p style={s.cardSub}>
-                CSV, Excel (.xlsx), JSON, PDF, TSV supported
-              </p>
+              <p style={s.cardSub}>CSV, Excel (.xlsx), JSON, PDF, TSV supported</p>
 
               <input
                 type="file"
@@ -260,25 +237,16 @@ export default function App() {
               {uploadStatus && (
                 <div style={s.successBox}>{uploadStatus}</div>
               )}
-
               {uploadError && (
-                <div style={s.errorBox}>
-                  ❌ {uploadError}
-                </div>
+                <div style={s.errorBox}>❌ {uploadError}</div>
               )}
 
               {columns.length > 0 && (
                 <div style={{
-                  marginTop:"12px",
-                  display  :"flex",
-                  flexWrap :"wrap",
-                  gap      :6,
-                  alignItems:"center"
+                  marginTop:"12px", display:"flex",
+                  flexWrap:"wrap", gap:6, alignItems:"center"
                 }}>
-                  <span style={{
-                    fontSize:12, color:"#6B7280",
-                    fontWeight:500
-                  }}>
+                  <span style={{ fontSize:12, color:"#6B7280", fontWeight:500 }}>
                     Columns:
                   </span>
                   {columns.map(c => (
@@ -290,11 +258,9 @@ export default function App() {
               {/* Data quality */}
               {qualityIssues.length > 0 && (
                 <div style={{
-                  marginTop   : 14,
-                  padding     : "14px 16px",
-                  background  : "#FFFBEB",
-                  border      : "1px solid #F59E0B",
-                  borderRadius: 10
+                  marginTop:14, padding:"14px 16px",
+                  background:"#FFFBEB",
+                  border:"1px solid #F59E0B", borderRadius:10
                 }}>
                   <p style={{
                     fontSize:13, fontWeight:600,
@@ -305,93 +271,57 @@ export default function App() {
                   </p>
                   {qualityIssues.map((issue, i) => (
                     <div key={i} style={{
-                      fontSize      :12, color:"#78350F",
-                      padding       :"5px 0",
-                      borderBottom  :"0.5px solid #FDE68A",
-                      display       :"flex",
-                      justifyContent:"space-between",
-                      gap           :10
+                      fontSize:12, color:"#78350F",
+                      padding:"5px 0",
+                      borderBottom:"0.5px solid #FDE68A",
+                      display:"flex", justifyContent:"space-between", gap:10
                     }}>
                       <div>
-                        <strong>
-                          {issue.type.replace(/_/g," ").toUpperCase()}
-                        </strong>
-                        {issue.column !== "all" && (
-                          <span> — <code>{issue.column}</code></span>
-                        )}
+                        <strong>{issue.type.replace(/_/g," ").toUpperCase()}</strong>
+                        {issue.column !== "all" && <span> — <code>{issue.column}</code></span>}
                         <span style={{ color:"#B45309" }}>
-                          {" "}({issue.count} rows,
-                           {issue.percentage}%)
+                          {" "}({issue.count} rows, {issue.percentage}%)
                         </span>
                         <br/>
-                        <span style={{
-                          fontSize:11, opacity:0.8
-                        }}>
-                          💡 {issue.suggestion}
-                        </span>
+                        <span style={{ fontSize:11, opacity:0.8 }}>💡 {issue.suggestion}</span>
                       </div>
                       <span style={{
-                        fontSize    :11,
-                        padding     :"2px 8px",
-                        borderRadius:20,
-                        fontWeight  :500,
-                        flexShrink  :0,
-                        background  : issue.severity==="high"
-                          ? "#FEE2E2"
-                          : issue.severity==="medium"
-                          ? "#FEF3C7" : "#F0FDF4",
-                        color       : issue.severity==="high"
-                          ? "#DC2626"
-                          : issue.severity==="medium"
-                          ? "#D97706" : "#059669"
+                        fontSize:11, padding:"2px 8px",
+                        borderRadius:20, fontWeight:500, flexShrink:0,
+                        background: issue.severity==="high" ? "#FEE2E2"
+                          : issue.severity==="medium" ? "#FEF3C7" : "#F0FDF4",
+                        color: issue.severity==="high" ? "#DC2626"
+                          : issue.severity==="medium" ? "#D97706" : "#059669"
                       }}>
                         {issue.severity}
                       </span>
                     </div>
                   ))}
-                  <div style={{
-                    marginTop:12, display:"flex", gap:8
-                  }}>
-                    <button
-                      onClick={handleFixAll}
-                      disabled={fixing}
+                  <div style={{ marginTop:12, display:"flex", gap:8 }}>
+                    <button onClick={handleFixAll} disabled={fixing}
                       style={{
-                        padding     :"8px 16px",
-                        background  : fixing
-                          ? "#94A3B8" : "#F59E0B",
-                        color       :"#fff",
-                        border      :"none",
-                        borderRadius:8,
-                        fontSize    :12,
-                        fontWeight  :600,
-                        cursor      : fixing
-                          ? "not-allowed" : "pointer"
+                        padding:"8px 16px",
+                        background: fixing ? "#94A3B8" : "#F59E0B",
+                        color:"#fff", border:"none", borderRadius:8,
+                        fontSize:12, fontWeight:600,
+                        cursor: fixing ? "not-allowed" : "pointer"
                       }}>
                       {fixing ? "⏳ Fixing..." : "✨ Auto Fix All"}
                     </button>
-                    <button
-                      onClick={() => setQualityIssues([])}
+                    <button onClick={() => setQualityIssues([])}
                       style={{
-                        padding     :"8px 16px",
-                        background  :"transparent",
-                        color       :"#92400E",
-                        border      :"1px solid #F59E0B",
-                        borderRadius:8,
-                        fontSize    :12,
-                        cursor      :"pointer"
+                        padding:"8px 16px", background:"transparent",
+                        color:"#92400E", border:"1px solid #F59E0B",
+                        borderRadius:8, fontSize:12, cursor:"pointer"
                       }}>
                       Skip
                     </button>
                   </div>
                   {fixStatus && (
                     <div style={{
-                      marginTop   :10,
-                      padding     :"8px 12px",
-                      background  :"#F0FDF4",
-                      border      :"1px solid #86EFAC",
-                      borderRadius:6,
-                      fontSize    :12,
-                      color       :"#166534"
+                      marginTop:10, padding:"8px 12px",
+                      background:"#F0FDF4", border:"1px solid #86EFAC",
+                      borderRadius:6, fontSize:12, color:"#166534"
                     }}>
                       {fixStatus}
                     </div>
@@ -400,46 +330,21 @@ export default function App() {
               )}
             </div>
 
-            {/* Multi file upload */}
             <MultiUpload onSuccess={handleMultiSuccess} />
 
-            {/* Quick nav after upload */}
             {columns.length > 0 && (
-              <div style={{
-                ...s.card,
-                background:"#EFF6FF",
-                border    :"1px solid #BFDBFE"
-              }}>
-                <p style={{
-                  fontSize:13, fontWeight:600,
-                  color:"#1D4ED8", margin:"0 0 12px"
-                }}>
+              <div style={{ ...s.card, background:"#EFF6FF", border:"1px solid #BFDBFE" }}>
+                <p style={{ fontSize:13, fontWeight:600, color:"#1D4ED8", margin:"0 0 12px" }}>
                   ✅ Data loaded! Go to:
                 </p>
-                <div style={{
-                  display :"flex",
-                  gap     :8,
-                  flexWrap:"wrap"
-                }}>
-                  {[
-                    ["💬 Query",   "query"],
-                    ["📊 EDA",     "eda"],
-                    ["🗂️ Schema",  "schema"],
-                    ["🧠 AutoML",  "automl"],
-                    ["🔮 Predict", "predict"],
-                  ].map(([label, id]) => (
-                    <button
-                      key={id}
-                      onClick={() => setActiveTab(id)}
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  {[["💬 Query","query"],["📊 EDA","eda"],["🗂️ Schema","schema"],
+                    ["🧠 AutoML","automl"],["🔮 Predict","predict"]].map(([label,id]) => (
+                    <button key={id} onClick={() => setActiveTab(id)}
                       style={{
-                        padding     :"8px 16px",
-                        background  :"#2563EB",
-                        color       :"#fff",
-                        border      :"none",
-                        borderRadius:8,
-                        fontSize    :13,
-                        fontWeight  :500,
-                        cursor      :"pointer"
+                        padding:"8px 16px", background:"#2563EB", color:"#fff",
+                        border:"none", borderRadius:8, fontSize:13,
+                        fontWeight:500, cursor:"pointer"
                       }}>
                       {label}
                     </button>
@@ -449,23 +354,18 @@ export default function App() {
             )}
           </div>
         )}
-          
+
         {/* ── QUERY PAGE ── */}
         {activeTab === "query" && (
           <div>
-            <PageTitle
-              icon="💬"
-              title="Ask a Question"
-              desc="Type in plain English — get SQL + chart + table"
-            />
-
+            <PageTitle icon="💬" title="Ask a Question"
+              desc="Type in plain English — get SQL + chart + table" />
             <div style={s.card}>
               <p style={s.cardSub}>
                 {columns.length > 0
                   ? `Available columns: ${columns.join(", ")}`
                   : "Upload a file first from the Upload tab"}
               </p>
-
               <div style={{ display:"flex", gap:8 }}>
                 <input
                   value={question}
@@ -475,74 +375,47 @@ export default function App() {
                   style={s.textInput}
                   disabled={loading}
                 />
-                <button
-                  onClick={handleAsk}
+                <button onClick={handleAsk}
                   disabled={loading || !question.trim()}
-                  style={{
-                    ...s.askBtn,
-                    opacity: loading || !question.trim()
-                      ? 0.6 : 1
-                  }}>
+                  style={{ ...s.askBtn, opacity: loading||!question.trim() ? 0.6 : 1 }}>
                   {loading ? "Thinking..." : "Ask →"}
                 </button>
               </div>
-
               {loading && (
-                <p style={{
-                  marginTop:8, fontSize:13,
-                  color:"#9CA3AF"
-                }}>
-                  ⏳ Generating SQL with Llama 3.2...
+                <p style={{ marginTop:8, fontSize:13, color:"#9CA3AF" }}>
+                  ⏳ Generating SQL...
                 </p>
               )}
             </div>
 
             {queryError && (
-              <div style={{ ...s.errorBox, marginBottom:16 }}>
-                ❌ {queryError}
-              </div>
+              <div style={{ ...s.errorBox, marginBottom:16 }}>❌ {queryError}</div>
             )}
 
             {result && (
               <div style={s.card}>
                 <p style={s.sectionLabel}>Generated SQL:</p>
                 <pre style={s.sqlBox}>{result.sql}</pre>
-
                 {result.result?.rows?.length > 0 ? (
                   <>
-                    <ChartPanel
-                      columns={result.result.columns}
-                      rows={result.result.rows}
-                    />
-                    <p style={{
-                      ...s.sectionLabel, marginTop:20
-                    }}>
-                      Data —{" "}
-                      <span style={{
-                        fontWeight:400, color:"#6B7280"
-                      }}>
+                    <ChartPanel columns={result.result.columns} rows={result.result.rows} />
+                    <p style={{ ...s.sectionLabel, marginTop:20 }}>
+                      Data — <span style={{ fontWeight:400, color:"#6B7280" }}>
                         {result.result.rows.length} rows
                       </span>
                     </p>
                     <div style={{ overflowX:"auto" }}>
                       <table style={s.table}>
                         <thead>
-                          <tr>
-                            {result.result.columns.map(c => (
-                              <th key={c} style={s.th}>{c}</th>
-                            ))}
-                          </tr>
+                          <tr>{result.result.columns.map(c=>(
+                            <th key={c} style={s.th}>{c}</th>
+                          ))}</tr>
                         </thead>
                         <tbody>
-                          {result.result.rows.map((row,i) => (
-                            <tr key={i} style={{
-                              background: i%2===0
-                                ? "#fff" : "#FAFAFA"
-                            }}>
-                              {result.result.columns.map(c => (
-                                <td key={c} style={s.td}>
-                                  {row[c] ?? "—"}
-                                </td>
+                          {result.result.rows.map((row,i)=>(
+                            <tr key={i} style={{ background:i%2===0?"#fff":"#FAFAFA" }}>
+                              {result.result.columns.map(c=>(
+                                <td key={c} style={s.td}>{row[c]??"—"}</td>
                               ))}
                             </tr>
                           ))}
@@ -551,128 +424,79 @@ export default function App() {
                     </div>
                   </>
                 ) : (
-                  <p style={{
-                    color:"#9CA3AF", fontSize:13
-                  }}>
-                    No rows returned.
-                  </p>
+                  <p style={{ color:"#9CA3AF", fontSize:13 }}>No rows returned.</p>
                 )}
               </div>
             )}
-
-            {/* Batch queries */}
             <BatchPanel />
           </div>
         )}
 
-        {/* ── EDA PAGE ── */}
         {activeTab === "eda" && (
           <div>
-            <PageTitle
-              icon="📊"
-              title="Exploratory Data Analysis"
-              desc="Auto statistical analysis of your uploaded data"
-            />
+            <PageTitle icon="📊" title="Exploratory Data Analysis"
+              desc="Auto statistical analysis of your uploaded data" />
             <EDAReport visible={true} />
           </div>
         )}
 
-        {/* ── SCHEMA PAGE ── */}
         {activeTab === "schema" && (
           <div>
-            <PageTitle
-              icon="🗂️"
-              title="Schema Explorer"
-              desc="View database structure, column roles and schema pattern"
-            />
+            <PageTitle icon="🗂️" title="Schema Explorer"
+              desc="View database structure, column roles and schema pattern" />
             <SchemaViewer visible={true} />
           </div>
         )}
 
-        {/* ── AUTOML PAGE ── */}
         {activeTab === "automl" && (
           <div>
-            <PageTitle
-              icon="🧠"
-              title="Auto Machine Learning"
-              desc="Ollama recommends best ML model → trains until 95% accuracy"
-            />
+            <PageTitle icon="🧠" title="Auto Machine Learning"
+              desc="Ollama recommends best ML model → trains until target accuracy" />
             <AutoMLPanel columns={columns} />
           </div>
         )}
 
-        {/* ── PREDICT PAGE ── */}
         {activeTab === "predict" && (
           <div>
-            <PageTitle
-              icon="🔮"
-              title="Predictive Analytics"
-              desc="Auto-detect time series and forecast future values"
-            />
+            <PageTitle icon="🔮" title="Predictive Analytics"
+              desc="Auto-detect time series and forecast future values" />
             <PredictPanel columns={columns} />
           </div>
         )}
 
-        {/* ── DAX PAGE ── */}
         {activeTab === "dax" && (
           <div>
-            <PageTitle
-              icon="📐"
-              title="Power BI DAX Generator"
-              desc="Generate DAX measures → download Power BI template"
-            />
+            <PageTitle icon="📐" title="Power BI DAX Generator"
+              desc="Generate DAX measures → download Power BI template" />
             <DAXPanel />
           </div>
         )}
 
-        {/* ── DASHBOARD PAGE ── */}
         {activeTab === "dashboard" && (
           <div>
-            <PageTitle
-              icon="📊"
-              title="Visual Dashboard"
-              desc="Full interactive dashboard with charts and filters"
-            />
+            <PageTitle icon="📊" title="Visual Dashboard"
+              desc="Full interactive dashboard with charts and filters" />
             <div style={s.card}>
-              <p style={{
-                fontSize:13, color:"#6B7280",
-                margin:"0 0 16px"
-              }}>
-                Opens a full-screen dashboard with:
-                KPI cards, line chart, bar chart,
-                pie chart, data table, filters and
-                dark/light mode toggle.
+              <p style={{ fontSize:13, color:"#6B7280", margin:"0 0 16px" }}>
+                Opens a full-screen dashboard with KPI cards, charts, filters and dark/light mode.
               </p>
-              <button
-                onClick={handleViewDashboard}
-                disabled={dbLoading}
+              <button onClick={handleViewDashboard} disabled={dbLoading}
                 style={{
-                  padding     :"12px 28px",
-                  background  : dbLoading
-                    ? "#94A3B8" : "#1E293B",
-                  color       :"#fff",
-                  border      :"none",
-                  borderRadius:8,
-                  fontSize    :14,
-                  fontWeight  :600,
-                  cursor      : dbLoading
-                    ? "not-allowed" : "pointer"
+                  padding:"12px 28px",
+                  background: dbLoading ? "#94A3B8" : "#1E293B",
+                  color:"#fff", border:"none", borderRadius:8,
+                  fontSize:14, fontWeight:600,
+                  cursor: dbLoading ? "not-allowed" : "pointer"
                 }}>
-                {dbLoading
-                  ? "⏳ Loading..."
-                  : "📊 Open Full Dashboard"}
+                {dbLoading ? "⏳ Loading..." : "📊 Open Full Dashboard"}
               </button>
-
               {columns.length > 0 && (
                 <div style={{
                   marginTop:16, padding:"10px 14px",
-                  background:"#F0FDF4",
-                  border    :"1px solid #86EFAC",
-                  borderRadius:8, fontSize:12,
-                  color:"#166534"
+                  background:"#F0FDF4", border:"1px solid #86EFAC",
+                  borderRadius:8, fontSize:12, color:"#166534"
                 }}>
-                  ✅ Data ready: {columns.length} columns,
-                  ready to visualize
+                  ✅ Data ready: {columns.length} columns loaded
                 </div>
               )}
             </div>
@@ -681,123 +505,54 @@ export default function App() {
 
       </div>
 
-      {/* ── Dashboard Modal ── */}
       {showDashboard && dashboardData && (
-        <Dashboard
-          data={dashboardData}
-          onClose={() => setShowDashboard(false)}
-        />
+        <Dashboard data={dashboardData} onClose={() => setShowDashboard(false)} />
       )}
-
     </div>
   )
 }
 
-// ── Page title component ─────────────────────────
 function PageTitle({ icon, title, desc }) {
   return (
     <div style={{ marginBottom:20 }}>
       <h1 style={{
-        fontSize  :24,
-        fontWeight:700,
-        color     :"#1E293B",
-        margin    :"0 0 4px",
-        display   :"flex",
-        alignItems:"center",
-        gap       :10
+        fontSize:24, fontWeight:700, color:"#1E293B",
+        margin:"0 0 4px", display:"flex", alignItems:"center", gap:10
       }}>
-        <span>{icon}</span>
-        {title}
+        <span>{icon}</span>{title}
       </h1>
-      <p style={{
-        fontSize:14, color:"#64748B", margin:0
-      }}>
-        {desc}
-      </p>
+      <p style={{ fontSize:14, color:"#64748B", margin:0 }}>{desc}</p>
     </div>
   )
 }
 
-// ── Styles ───────────────────────────────────────
 const s = {
-  card        : {
-    background  :"#fff",
-    border      :"1px solid #E5E7EB",
-    borderRadius:14,
-    padding     :"22px 26px",
-    marginBottom:16,
-    boxShadow   :"0 1px 4px rgba(0,0,0,.06)"
-  },
-  stepLabel   : {
-    fontSize     :11, fontWeight:600,
-    color        :"#7F77DD",
-    textTransform:"uppercase",
-    letterSpacing:".08em", margin:"0 0 4px"
-  },
-  cardTitle   : {
-    fontSize:17, fontWeight:600,
-    margin  :"0 0 4px", color:"#1a1a2e"
-  },
-  cardSub     : {
-    fontSize:13, color:"#9CA3AF",
-    margin  :"0 0 14px"
-  },
-  successBox  : {
-    marginTop   :10, padding:"10px 14px",
-    background  :"#F0FDF4",
-    border      :"1px solid #86EFAC",
-    borderRadius:8, fontSize:13,
-    color       :"#166534", fontWeight:500
-  },
-  errorBox    : {
-    marginTop   :10, padding:"10px 14px",
-    background  :"#FEF2F2",
-    border      :"1px solid #FECACA",
-    borderRadius:8, fontSize:13, color:"#DC2626"
-  },
-  colTag      : {
-    fontSize    :11, padding:"2px 9px",
-    borderRadius:20, background:"#EEF2FF",
-    color       :"#4338CA", fontWeight:500
-  },
-  textInput   : {
-    flex        :1, padding:"11px 14px",
-    borderRadius:8,
-    border      :"1px solid #D1D5DB",
-    fontSize    :14, outline:"none"
-  },
-  askBtn      : {
-    padding     :"11px 22px",
-    background  :"#7F77DD", color:"#fff",
-    border      :"none", borderRadius:8,
-    fontSize    :14, fontWeight:600,
-    cursor      :"pointer", whiteSpace:"nowrap"
-  },
-  sectionLabel: {
-    fontSize:13, fontWeight:600,
-    color   :"#374151", margin:"0 0 6px"
-  },
-  sqlBox      : {
-    background  :"#F8FAFC",
-    border      :"1px solid #E5E7EB",
-    borderRadius:8, padding:"12px 14px",
-    fontSize    :12, fontFamily:"monospace",
-    overflowX   :"auto", marginBottom:16,
-    lineHeight  :1.6, whiteSpace:"pre-wrap"
-  },
-  table       : {
-    width         :"100%",
-    borderCollapse:"collapse", fontSize:13
-  },
-  th          : {
-    background  :"#F9FAFB", padding:"10px 14px",
-    textAlign   :"left", fontWeight:600,
-    color       :"#374151",
-    borderBottom:"2px solid #E5E7EB",
-    whiteSpace  :"nowrap"
-  },
-  td          : {
-    padding     :"9px 14px", color:"#4B5563",
-    borderBottom:"1px solid #F3F4F6"
-  }
+  card        : { background:"#fff", border:"1px solid #E5E7EB",
+                  borderRadius:14, padding:"22px 26px", marginBottom:16,
+                  boxShadow:"0 1px 4px rgba(0,0,0,.06)" },
+  stepLabel   : { fontSize:11, fontWeight:600, color:"#7F77DD",
+                  textTransform:"uppercase", letterSpacing:".08em", margin:"0 0 4px" },
+  cardTitle   : { fontSize:17, fontWeight:600, margin:"0 0 4px", color:"#1a1a2e" },
+  cardSub     : { fontSize:13, color:"#9CA3AF", margin:"0 0 14px" },
+  successBox  : { marginTop:10, padding:"10px 14px", background:"#F0FDF4",
+                  border:"1px solid #86EFAC", borderRadius:8, fontSize:13,
+                  color:"#166534", fontWeight:500 },
+  errorBox    : { marginTop:10, padding:"10px 14px", background:"#FEF2F2",
+                  border:"1px solid #FECACA", borderRadius:8, fontSize:13, color:"#DC2626" },
+  colTag      : { fontSize:11, padding:"2px 9px", borderRadius:20,
+                  background:"#EEF2FF", color:"#4338CA", fontWeight:500 },
+  textInput   : { flex:1, padding:"11px 14px", borderRadius:8,
+                  border:"1px solid #D1D5DB", fontSize:14, outline:"none" },
+  askBtn      : { padding:"11px 22px", background:"#7F77DD", color:"#fff",
+                  border:"none", borderRadius:8, fontSize:14, fontWeight:600,
+                  cursor:"pointer", whiteSpace:"nowrap" },
+  sectionLabel: { fontSize:13, fontWeight:600, color:"#374151", margin:"0 0 6px" },
+  sqlBox      : { background:"#F8FAFC", border:"1px solid #E5E7EB", borderRadius:8,
+                  padding:"12px 14px", fontSize:12, fontFamily:"monospace",
+                  overflowX:"auto", marginBottom:16, lineHeight:1.6, whiteSpace:"pre-wrap" },
+  table       : { width:"100%", borderCollapse:"collapse", fontSize:13 },
+  th          : { background:"#F9FAFB", padding:"10px 14px", textAlign:"left",
+                  fontWeight:600, color:"#374151", borderBottom:"2px solid #E5E7EB",
+                  whiteSpace:"nowrap" },
+  td          : { padding:"9px 14px", color:"#4B5563", borderBottom:"1px solid #F3F4F6" }
 }
