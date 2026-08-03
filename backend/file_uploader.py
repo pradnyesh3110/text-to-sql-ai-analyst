@@ -86,20 +86,23 @@ def read_file(file_path: str) -> pd.DataFrame:
 
     # ── Excel ──────────────────────────────────
     elif ext in [".xlsx", ".xls"]:
-        # calamine (Rust-based) is ~5-6x faster than the default openpyxl engine
-        # for the same file — this was the other real cause of large-file upload
-        # timeouts, alongside the CSV parser fix above. Falls back to pandas'
-        # normal engine selection if calamine can't read a particular file
-        # (e.g. certain macro-enabled or unusually formatted workbooks).
+        # calamine (Rust-based) is ~5-6x faster than the default openpyxl engine.
+        # Sheets are read ONE AT A TIME and stop at the first non-empty one —
+        # loading every sheet upfront (sheet_name=None) measurably uses more
+        # memory even for a single-sheet file, and much more for a workbook
+        # with several large sheets we don't actually need.
         try:
-            all_sheets = pd.read_excel(file_path, sheet_name=None, engine="calamine")
+            xl = pd.ExcelFile(file_path, engine="calamine")
         except Exception:
-            all_sheets = pd.read_excel(file_path, sheet_name=None)
+            xl = pd.ExcelFile(file_path)  # fall back to pandas' default engine choice
 
-        for sheet_name, sheet_df in all_sheets.items():
-            if len(sheet_df) > 0:
-                return sheet_df
-        return next(iter(all_sheets.values()))
+        last_df = None
+        for sheet_name in xl.sheet_names:
+            df = xl.parse(sheet_name=sheet_name)
+            last_df = df
+            if len(df) > 0:
+                return df
+        return last_df
 
     # ── TSV / TXT ──────────────────────────────
     elif ext in [".tsv", ".txt"]:
