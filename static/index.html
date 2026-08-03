@@ -332,7 +332,13 @@ select.table-select{width:100%; padding:13px 16px; background:var(--surface2); b
 
     <div class="card">
       <h2>🗂️ Database schema</h2>
-      <button class="btn ghost" onclick="loadSchema()" id="schemaBtn">View schema</button>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn ghost" onclick="loadSchema()" id="schemaBtn">View schema</button>
+        <div class="pill-row" id="schemaViewToggle" style="margin:0; display:none;">
+          <span class="pill type-pill active" data-view="table" onclick="setSchemaViewMode('table')">📋 Table view</span>
+          <span class="pill type-pill" data-view="diagram" onclick="setSchemaViewMode('diagram')">🗺️ Diagram view</span>
+        </div>
+      </div>
       <div id="schemaArea" style="margin-top:16px;"></div>
     </div>
   </div>
@@ -795,8 +801,24 @@ async function uploadFile(){
     const data = await res.json();
     if (data.success){
       let msg = `✅ ${data.message} · ${data.columns.length} columns · ${data.rows} rows`;
-      if (data.storage) msg += ` · ${data.storage.used_mb}/${data.storage.quota_mb} MB used`;
+      const oldBanner = document.getElementById('uploadConfirmBanner');
+      if (oldBanner) oldBanner.remove();
+      let confirmHtml = '';
+      if (data.storage){
+        // storage is only present when the backend recognized an authenticated user —
+        // this is the definitive signal the file was actually saved under your account
+        confirmHtml = `<div class="status success" id="uploadConfirmBanner" style="margin-top:10px;">
+          ☁️ <b>Saved permanently to your account</b> — table <code>${data.table}</code> on Postgres/Neon ·
+          ${data.storage.used_mb}/${data.storage.quota_mb} MB used
+        </div>`;
+      } else {
+        confirmHtml = `<div class="status info" id="uploadConfirmBanner" style="margin-top:10px;">
+          ⚠️ <b>Not signed in</b> — this saved to a temporary shared demo table, not your account, and will be overwritten by the next anonymous upload.
+          <a onclick="openAcctModal()" style="cursor:pointer; color:var(--accent); font-weight:700;">Sign in</a> to save permanently.
+        </div>`;
+      }
       showStatus("uploadStatus", msg, "success");
+      document.getElementById("uploadStatus").insertAdjacentHTML('afterend', confirmHtml);
       lastUploadIssues = data.issues || [];
       renderQualityList();
       if (token) fetchMyFiles();
@@ -811,6 +833,8 @@ async function uploadFile(){
 }
 
 function showAddAnotherPrompt(){
+  const oldPrompt = document.getElementById('addAnotherPrompt');
+  if (oldPrompt) oldPrompt.remove();
   const el = document.getElementById("uploadStatus");
   el.insertAdjacentHTML('afterend', `
     <div class="status info" id="addAnotherPrompt" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
@@ -953,6 +977,9 @@ async function askQuestion(){
   btn.disabled = false; btn.textContent = "Ask →";
 }
 
+let lastSchemaData = null;
+let schemaViewMode = 'table';
+
 async function loadSchema(){
   const btn = document.getElementById("schemaBtn");
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
@@ -962,42 +989,133 @@ async function loadSchema(){
     const tableNames = data.tables ? Object.keys(data.tables) : [];
     if (data.error || !tableNames.length){
       document.getElementById("schemaArea").innerHTML = `<p style="color:var(--muted);">No tables yet — upload a file first.</p>`;
+      document.getElementById("schemaViewToggle").style.display = 'none';
       btn.disabled = false; btn.textContent = "View schema";
       return;
     }
-    let html = '';
-    tableNames.forEach(name => {
-      const t = data.tables[name];
-      html += `
-        <div style="margin-bottom:22px; border:1px solid var(--border); border-radius:12px; overflow:hidden;">
-          <div style="background:var(--surface2); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-            <div>
-              <b style="font-family:var(--font-display); font-size:.92rem;">${name}</b>
-              <span style="color:var(--muted); font-size:.78rem; margin-left:8px;">${t.row_count} rows</span>
-            </div>
-            <span class="pill">${t.schema_type}</span>
-          </div>
-          <table style="margin-top:0;">
-            <thead><tr><th>Column</th><th>Type</th><th>Role</th></tr></thead>
-            <tbody>
-              ${t.columns.map(c => `
-                <tr>
-                  <td><b>${c.name}</b></td>
-                  <td style="color:var(--muted);">${c.type}</td>
-                  <td>${c.role}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div style="padding:10px 16px; color:var(--muted); font-size:.78rem; border-top:1px solid var(--border);">${t.schema_note}</div>
-        </div>
-      `;
-    });
-    document.getElementById("schemaArea").innerHTML = html;
+    lastSchemaData = data;
+    document.getElementById("schemaViewToggle").style.display = 'flex';
+    renderSchemaView();
   } catch(e){
     document.getElementById("schemaArea").innerHTML = `<p style="color:var(--danger);">Error loading schema</p>`;
   }
   btn.disabled = false; btn.textContent = "View schema";
+}
+
+function setSchemaViewMode(mode){
+  schemaViewMode = mode;
+  document.querySelectorAll('#schemaViewToggle .type-pill').forEach(p => p.classList.toggle('active', p.dataset.view === mode));
+  renderSchemaView();
+}
+
+function renderSchemaView(){
+  if (!lastSchemaData) return;
+  document.getElementById("schemaArea").innerHTML = schemaViewMode === 'diagram'
+    ? renderSchemaDiagram(lastSchemaData)
+    : renderSchemaTable(lastSchemaData);
+}
+
+function escapeXml(str){
+  return String(str).replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]));
+}
+
+function renderSchemaTable(data){
+  const tableNames = Object.keys(data.tables);
+  let html = '';
+  tableNames.forEach(name => {
+    const t = data.tables[name];
+    html += `
+      <div style="margin-bottom:22px; border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+        <div style="background:var(--surface2); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <div>
+            <b style="font-family:var(--font-display); font-size:.92rem;">${name}</b>
+            <span style="color:var(--muted); font-size:.78rem; margin-left:8px;">${t.row_count} rows</span>
+          </div>
+          <span class="pill">${t.schema_type}</span>
+        </div>
+        <table style="margin-top:0;">
+          <thead><tr><th>Column</th><th>Type</th><th>Role</th></tr></thead>
+          <tbody>
+            ${t.columns.map(c => `
+              <tr>
+                <td><b>${c.name}</b></td>
+                <td style="color:var(--muted);">${c.type}</td>
+                <td>${c.role}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div style="padding:10px 16px; color:var(--muted); font-size:.78rem; border-top:1px solid var(--border);">${t.schema_note}</div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderSchemaDiagram(data){
+  const tableNames = Object.keys(data.tables);
+  const boxWidth = 210, rowHeight = 24, headerHeight = 34, gapX = 100, startX = 24, startY = 24;
+
+  const boxes = {};
+  let x = startX;
+  tableNames.forEach(name => {
+    const t = data.tables[name];
+    const height = headerHeight + Math.max(1, t.columns.length) * rowHeight;
+    boxes[name] = { x, y: startY, width: boxWidth, height, table: t };
+    x += boxWidth + gapX;
+  });
+  const totalWidth = x - gapX + startX;
+  const totalHeight = Math.max(...Object.values(boxes).map(b => b.y + b.height)) + startY;
+
+  function colCenterY(tableName, colName){
+    const b = boxes[tableName];
+    if (!b) return null;
+    const idx = b.table.columns.findIndex(c => c.name === colName);
+    if (idx === -1) return b.y + headerHeight / 2;
+    return b.y + headerHeight + idx * rowHeight + rowHeight / 2;
+  }
+
+  const connectors = [];
+  tableNames.forEach(name => {
+    const b = boxes[name];
+    b.table.columns.forEach(col => {
+      if (col.fk_ref && boxes[col.fk_ref]){
+        const targetBox = boxes[col.fk_ref];
+        const targetPk = targetBox.table.columns.find(c => c.is_pk) || targetBox.table.columns[0];
+        const sourceY = colCenterY(name, col.name);
+        const targetY = colCenterY(col.fk_ref, targetPk.name);
+        const goingRight = targetBox.x > b.x;
+        const sx = goingRight ? b.x + b.width : b.x;
+        const tx = goingRight ? targetBox.x : targetBox.x + targetBox.width;
+        connectors.push({ sx, sy: sourceY, tx, ty: targetY });
+      }
+    });
+  });
+
+  let svg = `<div style="overflow-x:auto; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:16px;">`;
+  svg += `<svg viewBox="0 0 ${totalWidth} ${totalHeight}" width="${totalWidth}" height="${totalHeight}" style="min-width:${totalWidth}px;" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs><marker id="arrowHead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6d28d9"/></marker></defs>`;
+
+  connectors.forEach(c => {
+    const midX = (c.sx + c.tx) / 2;
+    svg += `<path d="M ${c.sx} ${c.sy} C ${midX} ${c.sy}, ${midX} ${c.ty}, ${c.tx} ${c.ty}" fill="none" stroke="#6d28d9" stroke-width="2" opacity="0.55" marker-end="url(#arrowHead)"/>`;
+  });
+
+  tableNames.forEach(name => {
+    const b = boxes[name];
+    svg += `<rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" rx="10" fill="#ffffff" stroke="#e5e0f5" stroke-width="1.5"/>`;
+    svg += `<path d="M ${b.x} ${b.y+10} a10,10 0 0 1 10,-10 h${b.width-20} a10,10 0 0 1 10,10 v${headerHeight-10} h-${b.width} z" fill="#6d28d9"/>`;
+    svg += `<text x="${b.x + b.width/2}" y="${b.y + headerHeight/2 + 5}" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700" font-family="Space Grotesk, sans-serif">${escapeXml(name)}</text>`;
+    b.table.columns.forEach((col, i) => {
+      const cy = b.y + headerHeight + i * rowHeight;
+      const icon = col.is_pk ? '🔑 ' : (col.fk_ref ? '🔗 ' : '');
+      svg += `<text x="${b.x + 10}" y="${cy + rowHeight/2 + 4}" font-size="11" fill="#1e1b2e" font-family="Inter, sans-serif">${icon}${escapeXml(col.name)}</text>`;
+      if (i > 0) svg += `<line x1="${b.x}" y1="${cy}" x2="${b.x + b.width}" y2="${cy}" stroke="#f1eefc" stroke-width="1"/>`;
+    });
+  });
+
+  svg += `</svg></div>`;
+  return svg;
 }
 
 /* ---------------- Data Quality ---------------- */
