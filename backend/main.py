@@ -63,6 +63,11 @@ class AutoMLRequest(BaseModel):
     target_accuracy: float = 0.85
     target_col     : str   = ""
     clean_first    : bool  = True
+class ChartRequest(BaseModel):
+    instruction  : str
+    table        : str = "user_data"
+    previous_spec: dict = None
+    chart_type   : str = None
 
 class RegisterRequest(BaseModel):
     email   : str
@@ -261,7 +266,18 @@ def dax_query(req: QueryRequest):
         ]
     }
 
-
+@app.post("/chart")
+def chart(req: ChartRequest, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
+    from backend.charts import generate_chart
+    try:
+        table = resolve_table_name(req.table, authorization, db)
+        result = generate_chart(req.instruction, table, req.previous_spec, chart_type_override=req.chart_type)
+        return {"success": True, **result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        return {"success": False, "error": str(e)}
 @app.post("/clean")
 def clean_data(req: CleanRequest):
     try:

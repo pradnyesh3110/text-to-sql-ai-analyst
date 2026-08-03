@@ -199,6 +199,8 @@ footer p{margin-top:5px;}
 .modal p.sub{color:var(--muted); font-size:.86rem; margin-bottom:20px;}
 .modal .field{margin-bottom:14px;}
 .modal-switch{text-align:center; margin-top:16px; font-size:.85rem; color:var(--muted);}
+.divider-row{display:flex; align-items:center; gap:10px; margin:6px 0 18px; color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.05em;}
+.divider-row span{flex:1; height:1px; background:var(--border);}
 .modal-switch a{color:var(--accent2); cursor:pointer; font-weight:600;}
 .modal-close{position:absolute; top:14px; right:16px; background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;}
 .modal{position:relative;}
@@ -212,12 +214,44 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
 
 .pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
 .pill{padding:6px 13px; border-radius:999px; background:var(--surface2); border:1px solid var(--border); font-size:.78rem; color:var(--muted); font-weight:600;}
+.pill.type-pill{cursor:pointer; transition:all .15s; user-select:none;}
+.pill.type-pill:hover{border-color:var(--accent); color:var(--text);}
+.pill.type-pill.active{background:var(--accent); border-color:var(--accent); color:#fff;}
 
 .two-col{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
 @media (max-width:640px){.two-col{grid-template-columns:1fr;}}
 
 .narrative-box{background:var(--surface2); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:16px 18px; margin-top:16px; font-size:.9rem; line-height:1.65; color:var(--text);}
 .narrative-box .tag{color:var(--accent2); font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:6px;}
+
+.storage-bar-wrap{margin-bottom:18px;}
+.storage-bar-track{width:100%; height:9px; border-radius:999px; background:var(--surface3); overflow:hidden;}
+.storage-bar-fill{height:100%; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .4s ease;}
+.storage-bar-fill.full{background:linear-gradient(90deg,var(--danger),var(--warning));}
+.storage-bar-label{font-size:.76rem; color:var(--muted); margin-top:6px;}
+
+.file-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);}
+.file-row:last-child{border-bottom:none;}
+.file-row .fname{flex:1;}
+.file-row .fname b{font-size:.88rem;}
+.file-row .fmeta{font-size:.76rem; color:var(--muted); margin-top:2px;}
+.file-row button.del{background:transparent; border:1px solid var(--border); color:var(--danger); padding:6px 12px; border-radius:8px; font-size:.76rem; font-weight:700; cursor:pointer;}
+.file-row button.del:hover{background:rgba(225,29,72,.08); border-color:var(--danger);}
+
+select.table-select{width:100%; padding:13px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:.9rem; margin-bottom:14px; font-family:var(--font-body);}
+
+.plan-box{background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:16px;}
+.plan-row{display:flex; align-items:center; justify-content:space-between;}
+.plan-badge{display:inline-block; padding:5px 13px; border-radius:999px; font-size:.78rem; font-weight:700; font-family:var(--font-display); background:var(--surface3); color:var(--muted);}
+.plan-badge.pro{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;}
+.plan-badge.expired{background:rgba(225,29,72,.12); color:var(--danger);}
+.plan-expiry{font-size:.76rem; color:var(--muted); margin-left:8px;}
+
+.admin-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); font-size:.85rem;}
+.admin-row:last-child{border-bottom:none;}
+.admin-row .ae{flex:1;}
+.admin-row .ae b{font-size:.87rem;}
+.admin-row .am{font-size:.76rem; color:var(--muted); margin-top:2px;}
 </style>
 </head>
 <body>
@@ -247,6 +281,7 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
   <nav class="tabbar"><div class="tabbar-inner" id="tabbarInner">
     <button class="tab-btn active" data-tab="ask"><span class="dot"></span>Ask</button>
     <button class="tab-btn" data-tab="quality"><span class="dot"></span>Data Quality</button>
+    <button class="tab-btn" data-tab="charts"><span class="dot"></span>Charts</button>
     <button class="tab-btn" data-tab="eda"><span class="dot"></span>EDA Report</button>
     <button class="tab-btn" data-tab="forecast"><span class="dot"></span>Forecast</button>
     <button class="tab-btn" data-tab="automl"><span class="dot"></span>AutoML</button>
@@ -261,21 +296,32 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
   <div class="panel active" id="panel-ask">
     <div class="card">
       <h2>📁 Upload Your Data</h2>
-      <p class="desc">CSV, Excel, JSON, PDF, TSV supported</p>
+      <p class="desc">CSV, Excel, JSON, PDF, TSV supported. Signed-in uploads are saved permanently to your account (Postgres/Supabase) — nothing gets overwritten.</p>
       <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.pdf,.tsv,.txt">
       <br><button class="btn" onclick="uploadFile()" id="uploadBtn">Upload file</button>
       <div id="uploadStatus"></div>
     </div>
 
+    <div class="card hidden" id="myFilesCard">
+      <h2>🗄️ My files</h2>
+      <p class="desc">Everything you've uploaded, stored on Supabase/Postgres under your account.</p>
+      <div class="storage-bar-wrap">
+        <div class="storage-bar-track"><div class="storage-bar-fill" id="storageBarFill"></div></div>
+        <div class="storage-bar-label" id="storageBarLabel">0 MB / 2048 MB used</div>
+      </div>
+      <div id="myFilesList"></div>
+    </div>
+
     <div class="card">
       <h2>💬 Ask a question</h2>
-      <p class="desc">Ask in plain English — I'll generate the SQL and run it.</p>
+      <p class="desc">Ask in plain English. If you have more than one file, mention its name (e.g. "highest sale this month in sales_march.csv") and I'll route the query to the right one automatically.</p>
       <div class="query-row">
         <input type="text" id="questionInput" placeholder="e.g. Which product has the highest sales?" onkeypress="if(event.key==='Enter')askQuestion()">
         <button class="btn" onclick="askQuestion()" id="askBtn" style="margin-top:0;">Ask →</button>
       </div>
       <div id="queryStatus"></div>
       <div id="resultArea" class="hidden">
+        <p id="matchedFileNote" class="hidden" style="color:var(--muted); font-size:.82rem; margin-top:10px;"></p>
         <p style="color:var(--accent2); font-weight:600; margin-top:18px; font-family:var(--font-display); font-size:.85rem; text-transform:uppercase; letter-spacing:.03em;">Generated SQL</p>
         <div class="code-box" id="sqlBox"></div>
         <p style="color:var(--accent2); font-weight:600; margin-top:18px; font-family:var(--font-display); font-size:.85rem; text-transform:uppercase; letter-spacing:.03em;">Results</p>
@@ -302,11 +348,33 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
     </div>
   </div>
 
+  <!-- ================= CHARTS TAB ================= -->
+  <div class="panel" id="panel-charts">
+    <div class="card">
+      <h2>📊 Charts</h2>
+      <p class="desc">Describe a chart, then keep adjusting it in chat — colors, columns, sort order, or switch type entirely.</p>
+      <select class="table-select hidden" id="chartTableSelect"></select>
+      <div class="pill-row" id="chartTypeRow">
+        <span class="pill type-pill active" data-type="bar" onclick="pickChartType('bar')">📊 Bar</span>
+        <span class="pill type-pill" data-type="line" onclick="pickChartType('line')">📈 Line</span>
+        <span class="pill type-pill" data-type="pie" onclick="pickChartType('pie')">🥧 Pie</span>
+        <span class="pill type-pill" data-type="doughnut" onclick="pickChartType('doughnut')">🍩 Doughnut</span>
+      </div>
+      <div class="query-row">
+        <input type="text" id="chartInput" placeholder="e.g. sales by region, sorted highest first, make it blue" onkeypress="if(event.key==='Enter')runChart()">
+        <button class="btn" onclick="runChart()" id="chartBtn" style="margin-top:0;">Draw →</button>
+      </div>
+      <div id="chartStatus"></div>
+      <div class="chart-wrap hidden" id="chartWrap"><canvas id="mainChartCanvas"></canvas></div>
+    </div>
+  </div>
+
   <!-- ================= EDA TAB ================= -->
   <div class="panel" id="panel-eda">
     <div class="card">
       <h2>📊 Exploratory Data Analysis</h2>
       <p class="desc">Full statistical report on your uploaded dataset — distributions, correlations, and auto-generated insights.</p>
+      <select class="table-select hidden" id="edaTableSelect"></select>
       <button class="btn" onclick="runEDA()" id="edaBtn">Generate EDA report</button>
       <div id="edaStatus"></div>
       <div id="edaResults" class="hidden"></div>
@@ -318,6 +386,7 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
     <div class="card">
       <h2>📈 Predict / Forecast</h2>
       <p class="desc">Auto-detects a date and numeric column and forecasts future values (Prophet, with a linear fallback).</p>
+      <select class="table-select hidden" id="forecastTableSelect"></select>
       <div class="two-col">
         <div>
           <label class="field-label">Periods to forecast</label>
@@ -339,6 +408,7 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
     <div class="card">
       <h2>🧠 AutoML</h2>
       <p class="desc">Trains and compares models to predict a target column of your choice.</p>
+      <select class="table-select hidden" id="automlTableSelect"></select>
       <label class="field-label">Target column (optional — auto-suggested otherwise)</label>
       <input type="text" id="automlTarget" placeholder="e.g. sales_amount">
       <button class="btn" onclick="runAutoML()" id="automlBtn" style="margin-top:14px;">Run AutoML</button>
@@ -362,6 +432,7 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
     <div class="card">
       <h2>⚡ Power BI template</h2>
       <p class="desc">Download a ready-made .pbit template pre-wired with DAX measures for your uploaded table.</p>
+      <select class="table-select hidden" id="pbiTableSelect"></select>
       <button class="btn ghost" onclick="downloadPBI()" id="pbiBtn">⬇ Download .pbit template</button>
       <div id="pbiStatus"></div>
     </div>
@@ -392,6 +463,10 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
     <div id="acctModalLoggedOut">
       <h3 id="acctModalTitle">Sign in</h3>
       <p class="sub">Signing in saves your query count to your account so it persists across devices.</p>
+
+      <div id="googleBtnWrap" style="display:flex; justify-content:center; margin-bottom:16px;"></div>
+      <div class="divider-row"><span></span><b>or use email</b><span></span></div>
+
       <div class="field">
         <label class="field-label">Email</label>
         <input type="email" id="acctEmail" placeholder="you@example.com">
@@ -413,8 +488,35 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
         <div class="stat-box"><div class="num" id="acctQueryCount">0</div><div class="lbl">Queries used</div></div>
         <div class="stat-box"><div class="num">100</div><div class="lbl">Free limit</div></div>
       </div>
-      <button class="btn ghost full" onclick="logout()">Sign out</button>
+
+      <div class="plan-box" id="planBox">
+        <div class="plan-row">
+          <div>
+            <span class="plan-badge" id="planBadge">Free</span>
+            <span class="plan-expiry" id="planExpiry"></span>
+          </div>
+        </div>
+        <div class="storage-bar-wrap" style="margin-top:12px;">
+          <div class="storage-bar-track"><div class="storage-bar-fill" id="acctStorageFill"></div></div>
+          <div class="storage-bar-label" id="acctStorageLabel">0 MB / 2048 MB used</div>
+        </div>
+      </div>
+      <button class="btn full" id="upgradeBtn" onclick="upgradePlan()" style="margin-top:14px;">⚡ Upgrade to Pro — 4 GB storage</button>
+      <div id="upgradeStatus"></div>
+
+      <button class="btn ghost full hidden" id="adminLinkBtn" onclick="openAdminModal()" style="margin-top:10px;">🛠 Admin — view all subscribers</button>
+      <button class="btn ghost full" onclick="logout()" style="margin-top:10px;">Sign out</button>
     </div>
+  </div>
+</div>
+
+<!-- ================= ADMIN MODAL ================= -->
+<div class="modal-overlay" id="adminModalOverlay">
+  <div class="modal" style="max-width:640px;">
+    <button class="modal-close" onclick="closeModal('adminModalOverlay')">✕</button>
+    <h3>Subscribers</h3>
+    <p class="sub" id="adminSummary">Loading…</p>
+    <div id="adminUsersList" style="max-height:420px; overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -437,7 +539,9 @@ button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:va
 <script>
 const API = "";
 const LIMIT = 100;
-const GOOGLE_CLIENT_ID = "310870577299-sfu6pbl2rikbg5hih0jrjtjn6jfgn94b.apps.googleusercontent.com";
+// Replace with your own OAuth Client ID from https://console.cloud.google.com/apis/credentials
+// (Google Sign-In button is skipped automatically if this is left blank)
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 let token = localStorage.getItem('t2s_token') || null;
 let userEmail = localStorage.getItem('t2s_email') || null;
 let guestCount = parseInt(localStorage.getItem('t2s_guest_count') || '0', 10);
@@ -499,12 +603,138 @@ function openAcctModal(){
     document.getElementById('acctModalLoggedIn').classList.remove('hidden');
     document.getElementById('acctLoggedInEmail').textContent = userEmail;
     document.getElementById('acctQueryCount').textContent = window.serverQueryCount ?? 0;
+    refreshAccountDetails();
   } else {
     document.getElementById('acctModalLoggedOut').classList.remove('hidden');
     document.getElementById('acctModalLoggedIn').classList.add('hidden');
+    renderGoogleButton();
   }
   openModal('acctModalOverlay');
 }
+
+async function refreshAccountDetails(){
+  try{
+    const res = await fetch(API + '/me', { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    window.serverQueryCount = data.query_count;
+    document.getElementById('acctQueryCount').textContent = data.query_count;
+    renderSubscription(data.subscription);
+    document.getElementById('adminLinkBtn').classList.toggle('hidden', !data.is_admin);
+    window.isAdmin = !!data.is_admin;
+  } catch(e){}
+}
+
+function renderSubscription(sub){
+  if (!sub) return;
+  const badge = document.getElementById('planBadge');
+  badge.textContent = sub.plan === 'pro' ? 'Pro' : 'Free';
+  badge.className = 'plan-badge' + (sub.plan === 'pro' ? ' pro' : '') + (sub.status === 'expired' ? ' expired' : '');
+  const expiryEl = document.getElementById('planExpiry');
+  expiryEl.textContent = sub.expires_at
+    ? (sub.status === 'expired' ? `Expired ${new Date(sub.expires_at).toLocaleDateString()}` : `Renews ${new Date(sub.expires_at).toLocaleDateString()}`)
+    : '';
+  const pct = sub.storage_pct || 0;
+  const fill = document.getElementById('acctStorageFill');
+  fill.style.width = Math.min(100, pct) + '%';
+  fill.classList.toggle('full', pct > 90);
+  document.getElementById('acctStorageLabel').textContent = `${sub.storage_used_mb} MB / ${sub.storage_quota_mb} MB used`;
+  document.getElementById('upgradeBtn').classList.toggle('hidden', sub.plan === 'pro' && sub.status === 'active');
+}
+
+async function upgradePlan(){
+  const btn = document.getElementById('upgradeBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  clearStatus('upgradeStatus');
+  try{
+    const res = await fetch(API + '/subscribe', {
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({ plan: 'pro', days: 30 })
+    });
+    const data = await res.json();
+    if (!res.ok){
+      showStatus('upgradeStatus', '❌ ' + (data.detail || 'Could not upgrade'), 'error');
+    } else {
+      renderSubscription(data.subscription);
+      showStatus('upgradeStatus', '✅ Upgraded to Pro — 4 GB storage unlocked', 'success');
+      if (token) fetchMyFiles();
+    }
+  } catch(e){
+    showStatus('upgradeStatus', '❌ Network error', 'error');
+  }
+  btn.disabled = false; btn.innerHTML = '⚡ Upgrade to Pro — 4 GB storage';
+}
+
+/* ---------------- Admin ---------------- */
+async function openAdminModal(){
+  openModal('adminModalOverlay');
+  document.getElementById('adminSummary').textContent = 'Loading…';
+  document.getElementById('adminUsersList').innerHTML = '';
+  try{
+    const res = await fetch(API + '/admin/users', { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok){ document.getElementById('adminSummary').textContent = data.detail || 'Access denied'; return; }
+    document.getElementById('adminSummary').textContent =
+      `${data.total} users · ${data.active_subscribers} active subscribers · ${data.expired_subscribers} expired`;
+    document.getElementById('adminUsersList').innerHTML = data.users.map(u => `
+      <div class="admin-row">
+        <div class="ae">
+          <b>${u.email}</b>
+          <div class="am">${u.query_count} queries · ${u.storage_used_mb}/${u.storage_quota_mb} MB</div>
+        </div>
+        <span class="plan-badge${u.plan === 'pro' ? ' pro' : ''}${u.status === 'expired' ? ' expired' : ''}">${u.plan}${u.status === 'expired' ? ' · expired' : ''}</span>
+      </div>
+    `).join('');
+  } catch(e){
+    document.getElementById('adminSummary').textContent = 'Network error loading subscribers';
+  }
+}
+
+/* ---------------- Google Sign-In ---------------- */
+let googleInitialized = false;
+function renderGoogleButton(){
+  const wrap = document.getElementById('googleBtnWrap');
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('YOUR_GOOGLE_CLIENT_ID')){
+    wrap.style.display = 'none';
+    document.querySelector('.divider-row').style.display = 'none';
+    return;
+  }
+  if (typeof google === 'undefined' || !google.accounts){
+    // GSI script hasn't loaded yet — retry shortly
+    setTimeout(renderGoogleButton, 300);
+    return;
+  }
+  if (!googleInitialized){
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+    googleInitialized = true;
+  }
+  wrap.innerHTML = '';
+  google.accounts.id.renderButton(wrap, { theme:'outline', size:'large', shape:'pill', width:260 });
+}
+async function handleGoogleCredential(response){
+  clearStatus('acctStatus');
+  try{
+    const res = await fetch(API + '/auth/google', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ credential: response.credential })
+    });
+    const data = await res.json();
+    if (!res.ok){
+      showStatus('acctStatus', '❌ ' + (data.detail || 'Google sign-in failed'), 'error');
+    } else {
+      token = data.token; userEmail = data.email;
+      window.serverQueryCount = data.query_count;
+      localStorage.setItem('t2s_token', token);
+      localStorage.setItem('t2s_email', userEmail);
+      updateFuelGauge();
+      closeModal('acctModalOverlay');
+      fetchMyFiles();
+    }
+  } catch(e){
+    showStatus('acctStatus', '❌ Network error during Google sign-in', 'error');
+  }
+}
+
 function toggleAuthMode(){
   authMode = authMode === 'login' ? 'register' : 'login';
   document.getElementById('acctModalTitle').textContent = authMode === 'login' ? 'Sign in' : 'Create account';
@@ -535,6 +765,7 @@ async function submitAuth(){
       localStorage.setItem('t2s_email', userEmail);
       updateFuelGauge();
       closeModal('acctModalOverlay');
+      fetchMyFiles();
     }
   } catch(e){
     showStatus('acctStatus', '❌ Network error', 'error');
@@ -545,6 +776,7 @@ function logout(){
   token = null; userEmail = null; window.serverQueryCount = 0;
   localStorage.removeItem('t2s_token'); localStorage.removeItem('t2s_email');
   updateFuelGauge();
+  fetchMyFiles();
   closeModal('acctModalOverlay');
 }
 
@@ -558,12 +790,15 @@ async function uploadFile(){
   try{
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(API + "/upload", { method:"POST", body: form });
+    const res = await fetch(API + "/upload", { method:"POST", headers: authHeaders(), body: form });
     const data = await res.json();
     if (data.success){
-      showStatus("uploadStatus", `✅ ${data.message} · ${data.columns.length} columns · ${data.rows} rows`, "success");
+      let msg = `✅ ${data.message} · ${data.columns.length} columns · ${data.rows} rows`;
+      if (data.storage) msg += ` · ${data.storage.used_mb}/${data.storage.quota_mb} MB used`;
+      showStatus("uploadStatus", msg, "success");
       lastUploadIssues = data.issues || [];
       renderQualityList();
+      if (token) fetchMyFiles();
     } else {
       showStatus("uploadStatus", "❌ " + data.error, "error");
     }
@@ -571,6 +806,70 @@ async function uploadFile(){
     showStatus("uploadStatus", "❌ Network error — backend may be waking up, wait 30s and retry", "error");
   }
   btn.disabled = false; btn.textContent = "Upload file";
+}
+
+/* ---------------- My Files ---------------- */
+let myFiles = [];
+async function fetchMyFiles(){
+  if (!token){
+    document.getElementById('myFilesCard').classList.add('hidden');
+    myFiles = [];
+    populateTableSelects();
+    return;
+  }
+  try{
+    const res = await fetch(API + '/files', { headers: authHeaders() });
+    if (!res.ok){ return; }
+    const data = await res.json();
+    myFiles = data.files || [];
+    document.getElementById('myFilesCard').classList.remove('hidden');
+    renderMyFiles(data);
+    populateTableSelects();
+  } catch(e){}
+}
+function renderMyFiles(data){
+  const pct = data.storage_quota_mb ? Math.min(100, (data.storage_used_mb / data.storage_quota_mb) * 100) : 0;
+  const fill = document.getElementById('storageBarFill');
+  fill.style.width = pct + '%';
+  fill.classList.toggle('full', pct > 90);
+  document.getElementById('storageBarLabel').textContent = `${data.storage_used_mb} MB / ${data.storage_quota_mb} MB used`;
+
+  const list = document.getElementById('myFilesList');
+  if (!myFiles.length){
+    list.innerHTML = '<p style="color:var(--muted); font-size:.85rem;">No files uploaded yet.</p>';
+    return;
+  }
+  list.innerHTML = myFiles.map(f => `
+    <div class="file-row">
+      <div class="fname">
+        <b>${f.filename}</b>
+        <div class="fmeta">${f.rows} rows · ${f.size_mb} MB · uploaded ${new Date(f.uploaded_at).toLocaleDateString()}</div>
+      </div>
+      <button class="del" onclick="deleteFile('${f.table_name}')">Delete</button>
+    </div>
+  `).join('');
+}
+async function deleteFile(tableName){
+  if (!confirm('Delete this file? This cannot be undone.')) return;
+  try{
+    await fetch(API + '/files/' + tableName, { method:'DELETE', headers: authHeaders() });
+    fetchMyFiles();
+  } catch(e){}
+}
+function populateTableSelects(){
+  const ids = ['edaTableSelect','forecastTableSelect','automlTableSelect','pbiTableSelect','chartTableSelect'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!myFiles.length){ el.classList.add('hidden'); el.innerHTML = ''; return; }
+    el.classList.remove('hidden');
+    el.innerHTML = myFiles.map(f => `<option value="${f.table_name}">${f.filename}</option>`).join('');
+  });
+}
+function selectedTable(selectId){
+  const el = document.getElementById(selectId);
+  if (el && !el.classList.contains('hidden') && el.value) return el.value;
+  return 'user_data';
 }
 
 /* ---------------- Ask / Query ---------------- */
@@ -609,6 +908,13 @@ async function askQuestion(){
       } else {
         tableDiv.innerHTML = '<p style="color:var(--muted);">No rows returned.</p>';
       }
+      const noteEl = document.getElementById('matchedFileNote');
+      if (data.matched_file){
+        noteEl.textContent = `📄 Matched to your uploaded file: ${data.matched_file}`;
+        noteEl.classList.remove('hidden');
+      } else {
+        noteEl.classList.add('hidden');
+      }
       document.getElementById("resultArea").className = "";
       trackQueryResponse(data);
     }
@@ -622,7 +928,7 @@ async function loadSchema(){
   const btn = document.getElementById("schemaBtn");
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
   try{
-    const res = await fetch(API + "/schema");
+    const res = await fetch(API + "/schema", { headers: authHeaders() });
     const data = await res.json();
     document.getElementById("schemaArea").innerHTML = `<div class="code-box">${(data.schema || "No schema available").replace(/</g,"&lt;")}</div>`;
   } catch(e){
@@ -682,13 +988,81 @@ async function runClean(){
 }
 
 /* ---------------- EDA ---------------- */
+/* ---------------- Charts (chat-driven, multi-type) ---------------- */
+let currentChartSpec = null;
+let currentChartTable = null;
+let selectedChartType = 'bar';
+
+function pickChartType(type){
+  selectedChartType = type;
+  document.querySelectorAll('#chartTypeRow .type-pill').forEach(p => p.classList.toggle('active', p.dataset.type === type));
+}
+
+async function runChart(){
+  const instruction = document.getElementById('chartInput').value.trim();
+  if (!instruction){ showStatus('chartStatus', 'Describe a chart first', 'error'); return; }
+  const table = selectedTable('chartTableSelect');
+  // reset conversation memory if the user switched tables
+  if (currentChartTable !== table){ currentChartSpec = null; currentChartTable = table; }
+
+  const btn = document.getElementById('chartBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  clearStatus('chartStatus');
+  try{
+    const res = await fetch(API + '/chart', {
+      method: 'POST', headers: {'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({ instruction, table, previous_spec: currentChartSpec, chart_type: selectedChartType })
+    });
+    const data = await res.json();
+    if (!data.success){ showStatus('chartStatus', '❌ ' + (data.error || 'Could not build chart'), 'error'); btn.disabled=false; btn.textContent='Draw →'; return; }
+
+    currentChartSpec = data.spec;
+    pickChartType(data.spec.chart_type); // keep pills in sync in case the type changed
+    document.getElementById('chartWrap').classList.remove('hidden');
+    if (charts.main) charts.main.destroy();
+
+    const isSliced = data.spec.chart_type === 'pie' || data.spec.chart_type === 'doughnut';
+    charts.main = new Chart(document.getElementById('mainChartCanvas'), {
+      type: data.spec.chart_type,
+      data: {
+        labels: data.data.labels,
+        datasets: [{
+          label: data.spec.title,
+          data: data.data.values,
+          backgroundColor: isSliced ? data.data.colors : data.spec.color,
+          borderColor: isSliced ? '#ffffff' : data.spec.color,
+          borderWidth: isSliced ? 2 : 0,
+          borderRadius: isSliced ? 0 : 6,
+          tension: data.spec.chart_type === 'line' ? 0.3 : 0
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: isSliced, labels: { color: '#1e1b2e' } },
+          title: { display: true, text: data.spec.title, color: '#1e1b2e' }
+        },
+        scales: isSliced ? {} : {
+          x: { ticks: { color: '#6f6885' }, grid: { color: '#e5e0f5' } },
+          y: { ticks: { color: '#6f6885' }, grid: { color: '#e5e0f5' } }
+        }
+      }
+    });
+    document.getElementById('chartInput').value = '';
+    document.getElementById('chartInput').placeholder = 'e.g. make it green, sort ascending, top 5 only';
+  } catch(e){
+    showStatus('chartStatus', '❌ ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Draw →';
+}
+
 async function runEDA(){
   const btn = document.getElementById('edaBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing...';
   clearStatus('edaStatus');
   document.getElementById('edaResults').classList.add('hidden');
   try{
-    const res = await fetch(API + '/eda');
+    const res = await fetch(API + '/eda?table=' + encodeURIComponent(selectedTable('edaTableSelect')), { headers: authHeaders() });
     const data = await res.json();
     if (data.error){ showStatus('edaStatus', '❌ ' + data.error, 'error'); btn.disabled=false; btn.textContent='Generate EDA report'; return; }
 
@@ -761,8 +1135,8 @@ async function runForecast(){
   document.getElementById('forecastResults').classList.add('hidden');
   try{
     const res = await fetch(API + '/predict', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ periods, value_col: valueCol, date_col: '' })
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({ periods, value_col: valueCol, date_col: '', table: selectedTable('forecastTableSelect') })
     });
     const data = await res.json();
     if (!data.success){ showStatus('forecastStatus', '❌ ' + (data.error || 'Forecast failed'), 'error'); btn.disabled=false; btn.textContent='Run forecast'; return; }
@@ -810,8 +1184,8 @@ async function runAutoML(){
   document.getElementById('automlResults').classList.add('hidden');
   try{
     const res = await fetch(API + '/automl', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ target_col: targetCol, target_accuracy: 0.85, clean_first: true })
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({ target_col: targetCol, target_accuracy: 0.85, clean_first: true, table: selectedTable('automlTableSelect') })
     });
     const data = await res.json();
     let html = '';
@@ -889,8 +1263,8 @@ async function downloadPBI(){
   clearStatus('pbiStatus');
   try{
     const res = await fetch(API + '/download-pbi-template', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ dax_measures: [], chart_type:'bar', table_name:'user_data' })
+      method:'POST', headers:{'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({ dax_measures: [], chart_type:'bar', table_name: selectedTable('pbiTableSelect') })
     });
     if (!res.ok){ showStatus('pbiStatus', '❌ Could not build template — upload data first', 'error'); btn.disabled=false; btn.textContent='⬇ Download .pbit template'; return; }
     const blob = await res.blob();
@@ -952,7 +1326,7 @@ async function runBatch(){
   if (token){
     try{
       const res = await fetch(API + '/me', { headers: authHeaders() });
-      if (res.ok){ const data = await res.json(); window.serverQueryCount = data.query_count; }
+      if (res.ok){ const data = await res.json(); window.serverQueryCount = data.query_count; fetchMyFiles(); }
       else { logout(); }
     } catch(e){}
   }
