@@ -327,6 +327,12 @@ select.table-select{width:100%; padding:13px 16px; background:var(--surface2); b
         <div class="code-box" id="sqlBox"></div>
         <p style="color:var(--accent2); font-weight:600; margin-top:18px; font-family:var(--font-display); font-size:.85rem; text-transform:uppercase; letter-spacing:.03em;">Results</p>
         <div id="tableArea"></div>
+        <div id="feedbackRow" style="display:flex; align-items:center; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+          <span style="font-size:.82rem; color:var(--muted);">Was this answer correct?</span>
+          <button class="btn ghost small" id="feedbackYesBtn" onclick="submitFeedback(true)">👍 Yes</button>
+          <button class="btn ghost small" id="feedbackNoBtn" onclick="submitFeedback(false)">👎 No</button>
+          <span id="feedbackThanks" class="hidden" style="font-size:.82rem; color:var(--success); font-weight:600;">Thanks — logged for review.</span>
+        </div>
       </div>
     </div>
 
@@ -578,6 +584,14 @@ function openModal(id){ document.getElementById(id).classList.add('active'); }
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 
 function updateFuelGauge(){
+  if (window.isAdmin){
+    const ring = document.getElementById('fuelRingFill');
+    ring.style.strokeDashoffset = 0;
+    ring.classList.remove('low');
+    document.getElementById('fuelText').textContent = '∞ unlimited';
+    document.getElementById('acctBtn').textContent = token ? (userEmail || 'Account') : 'Sign in';
+    return;
+  }
   const used = token ? (window.serverQueryCount ?? 0) : guestCount;
   const remaining = Math.max(0, LIMIT - used);
   const circumference = 100.5;
@@ -930,7 +944,7 @@ async function askQuestion(){
   const q = document.getElementById("questionInput").value.trim();
   if (!q){ showStatus("queryStatus", "Please enter a question", "error"); return; }
   const currentUsed = token ? (window.serverQueryCount ?? 0) : guestCount;
-  if (currentUsed >= LIMIT){ handleLimitReached(); return; }
+  if (!window.isAdmin && currentUsed >= LIMIT){ handleLimitReached(); return; }
 
   const btn = document.getElementById("askBtn");
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
@@ -968,6 +982,11 @@ async function askQuestion(){
       } else {
         noteEl.classList.add('hidden');
       }
+      currentQueryLogId = data.query_log_id || null;
+      document.getElementById('feedbackRow').classList.remove('hidden');
+      document.getElementById('feedbackYesBtn').disabled = false;
+      document.getElementById('feedbackNoBtn').disabled = false;
+      document.getElementById('feedbackThanks').classList.add('hidden');
       document.getElementById("resultArea").className = "";
       trackQueryResponse(data);
     }
@@ -975,6 +994,24 @@ async function askQuestion(){
     showStatus("queryStatus", "❌ " + e.message, "error");
   }
   btn.disabled = false; btn.textContent = "Ask →";
+}
+
+let currentQueryLogId = null;
+async function submitFeedback(helpful){
+  if (!currentQueryLogId) return;
+  document.getElementById('feedbackYesBtn').disabled = true;
+  document.getElementById('feedbackNoBtn').disabled = true;
+  try{
+    await fetch(API + '/feedback', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ query_log_id: currentQueryLogId, helpful })
+    });
+    document.getElementById('feedbackThanks').classList.remove('hidden');
+  } catch(e){
+    // fail silently — feedback is a nice-to-have, shouldn't interrupt the user's flow
+    document.getElementById('feedbackYesBtn').disabled = false;
+    document.getElementById('feedbackNoBtn').disabled = false;
+  }
 }
 
 let lastSchemaData = null;
@@ -1510,6 +1547,7 @@ async function runBatch(){
       if (res.ok){
         const data = await res.json();
         window.serverQueryCount = data.query_count;
+        window.isAdmin = !!data.is_admin;
         fetchMyFiles();
       } else {
         logout();
