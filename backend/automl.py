@@ -2,6 +2,18 @@
 # backend/automl.py
 import os
 
+
+def generate_local_automl_narrative(best_model: str, acc, feats: list) -> str:
+    """Builds the AutoML summary sentence entirely in Python — no LLM
+    call, so nothing derived from the dataset leaves the server."""
+    parts = [f"The best-performing model was {best_model}, reaching {acc} accuracy."]
+    if feats:
+        top = ", ".join(f'"{f["feature"]}" ({f["pct"]}%)' for f in feats)
+        parts.append(f"The most influential features were {top}.")
+    parts.append("Consider additional feature engineering or a different target column if this accuracy isn't enough.")
+    return " ".join(parts)
+
+
 IS_DEMO = os.environ.get("DEMO_MODE", "false").lower() == "true"
 
 if IS_DEMO:
@@ -208,7 +220,6 @@ Dataset info:
 - Missing %: {info['missing_pct']}
 - Unique counts: {info['unique_counts']}
 - Potential targets: {info['potential_targets']}
-- Sample: {json.dumps(info['sample'], default=str)[:400]}
 - Train/Test split: {info['train_test_split']}
 
 Rules:
