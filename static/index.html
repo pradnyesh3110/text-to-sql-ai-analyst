@@ -193,6 +193,7 @@ footer p{margin-top:5px;}
 
 /* Modal */
 .modal-overlay{position:fixed; inset:0; background:rgba(6,9,18,.72); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+
 .modal-overlay.active{display:flex;}
 .modal{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:30px; max-width:420px; width:100%; box-shadow:0 20px 60px rgba(30,27,46,.2);}
 .modal h3{font-family:var(--font-display); font-size:1.15rem; margin-bottom:6px;}
@@ -541,7 +542,7 @@ const API = "";
 const LIMIT = 100;
 // Replace with your own OAuth Client ID from https://console.cloud.google.com/apis/credentials
 // (Google Sign-In button is skipped automatically if this is left blank)
-const GOOGLE_CLIENT_ID = "523626225433-8qf4d5uos4trjs12foljufn4l0o7b4qq.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 let token = localStorage.getItem('t2s_token') || null;
 let userEmail = localStorage.getItem('t2s_email') || null;
 let guestCount = parseInt(localStorage.getItem('t2s_guest_count') || '0', 10);
@@ -692,16 +693,16 @@ async function openAdminModal(){
 
 /* ---------------- Google Sign-In ---------------- */
 let googleInitialized = false;
-function renderGoogleButton(){
-  const wrap = document.getElementById('googleBtnWrap');
+function renderGoogleButton(wrapId = 'googleBtnWrap'){
+  const wrap = document.getElementById(wrapId);
+  const divider = wrap ? wrap.nextElementSibling : null;
   if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('YOUR_GOOGLE_CLIENT_ID')){
-    wrap.style.display = 'none';
-    document.querySelector('.divider-row').style.display = 'none';
+    if (wrap) wrap.style.display = 'none';
+    if (divider && divider.classList.contains('divider-row')) divider.style.display = 'none';
     return;
   }
   if (typeof google === 'undefined' || !google.accounts){
-    // GSI script hasn't loaded yet — retry shortly
-    setTimeout(renderGoogleButton, 300);
+    setTimeout(() => renderGoogleButton(wrapId), 300);
     return;
   }
   if (!googleInitialized){
@@ -711,6 +712,17 @@ function renderGoogleButton(){
   wrap.innerHTML = '';
   google.accounts.id.renderButton(wrap, { theme:'outline', size:'large', shape:'pill', width:260 });
 }
+
+function onAuthSuccess(data){
+  token = data.token; userEmail = data.email;
+  window.serverQueryCount = data.query_count;
+  localStorage.setItem('t2s_token', token);
+  localStorage.setItem('t2s_email', userEmail);
+  updateFuelGauge();
+  closeModal('acctModalOverlay');
+  fetchMyFiles();
+}
+
 async function handleGoogleCredential(response){
   clearStatus('acctStatus');
   try{
@@ -722,13 +734,7 @@ async function handleGoogleCredential(response){
     if (!res.ok){
       showStatus('acctStatus', '❌ ' + (data.detail || 'Google sign-in failed'), 'error');
     } else {
-      token = data.token; userEmail = data.email;
-      window.serverQueryCount = data.query_count;
-      localStorage.setItem('t2s_token', token);
-      localStorage.setItem('t2s_email', userEmail);
-      updateFuelGauge();
-      closeModal('acctModalOverlay');
-      fetchMyFiles();
+      onAuthSuccess(data);
     }
   } catch(e){
     showStatus('acctStatus', '❌ Network error during Google sign-in', 'error');
@@ -759,19 +765,14 @@ async function submitAuth(){
     if (!res.ok){
       showStatus('acctStatus', '❌ ' + (data.detail || 'Something went wrong'), 'error');
     } else {
-      token = data.token; userEmail = data.email;
-      window.serverQueryCount = data.query_count;
-      localStorage.setItem('t2s_token', token);
-      localStorage.setItem('t2s_email', userEmail);
-      updateFuelGauge();
-      closeModal('acctModalOverlay');
-      fetchMyFiles();
+      onAuthSuccess(data);
     }
   } catch(e){
     showStatus('acctStatus', '❌ Network error', 'error');
   }
   btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign in' : 'Create account';
 }
+
 function logout(){
   token = null; userEmail = null; window.serverQueryCount = 0;
   localStorage.removeItem('t2s_token'); localStorage.removeItem('t2s_email');
@@ -832,7 +833,8 @@ function renderMyFiles(data){
   const fill = document.getElementById('storageBarFill');
   fill.style.width = pct + '%';
   fill.classList.toggle('full', pct > 90);
-  document.getElementById('storageBarLabel').textContent = `${data.storage_used_mb} MB / ${data.storage_quota_mb} MB used`;
+  const filesLabel = data.max_files ? `${data.file_count}/${data.max_files} files (Free plan)` : `${data.file_count} files (unlimited on Pro)`;
+  document.getElementById('storageBarLabel').textContent = `${data.storage_used_mb} MB / ${data.storage_quota_mb} MB used · ${filesLabel}`;
 
   const list = document.getElementById('myFilesList');
   if (!myFiles.length){
@@ -928,9 +930,43 @@ async function loadSchema(){
   const btn = document.getElementById("schemaBtn");
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
   try{
-    const res = await fetch(API + "/schema", { headers: authHeaders() });
+    const res = await fetch(API + "/schema-details", { headers: authHeaders() });
     const data = await res.json();
-    document.getElementById("schemaArea").innerHTML = `<div class="code-box">${(data.schema || "No schema available").replace(/</g,"&lt;")}</div>`;
+    const tableNames = data.tables ? Object.keys(data.tables) : [];
+    if (data.error || !tableNames.length){
+      document.getElementById("schemaArea").innerHTML = `<p style="color:var(--muted);">No tables yet — upload a file first.</p>`;
+      btn.disabled = false; btn.textContent = "View schema";
+      return;
+    }
+    let html = '';
+    tableNames.forEach(name => {
+      const t = data.tables[name];
+      html += `
+        <div style="margin-bottom:22px; border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+          <div style="background:var(--surface2); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div>
+              <b style="font-family:var(--font-display); font-size:.92rem;">${name}</b>
+              <span style="color:var(--muted); font-size:.78rem; margin-left:8px;">${t.row_count} rows</span>
+            </div>
+            <span class="pill">${t.schema_type}</span>
+          </div>
+          <table style="margin-top:0;">
+            <thead><tr><th>Column</th><th>Type</th><th>Role</th></tr></thead>
+            <tbody>
+              ${t.columns.map(c => `
+                <tr>
+                  <td><b>${c.name}</b></td>
+                  <td style="color:var(--muted);">${c.type}</td>
+                  <td>${c.role}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div style="padding:10px 16px; color:var(--muted); font-size:.78rem; border-top:1px solid var(--border);">${t.schema_note}</div>
+        </div>
+      `;
+    });
+    document.getElementById("schemaArea").innerHTML = html;
   } catch(e){
     document.getElementById("schemaArea").innerHTML = `<p style="color:var(--danger);">Error loading schema</p>`;
   }
@@ -1326,8 +1362,13 @@ async function runBatch(){
   if (token){
     try{
       const res = await fetch(API + '/me', { headers: authHeaders() });
-      if (res.ok){ const data = await res.json(); window.serverQueryCount = data.query_count; fetchMyFiles(); }
-      else { logout(); }
+      if (res.ok){
+        const data = await res.json();
+        window.serverQueryCount = data.query_count;
+        fetchMyFiles();
+      } else {
+        logout();
+      }
     } catch(e){}
   }
   updateFuelGauge();
