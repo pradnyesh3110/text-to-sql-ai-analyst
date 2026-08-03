@@ -38,23 +38,41 @@ def read_file(file_path: str) -> pd.DataFrame:
         df = None
         last_error = None
 
-        # First pass: let pandas sniff the delimiter (handles comma, semicolon, tab, pipe, etc.)
-        for enc in [encoding, "utf-8", "latin-1"]:
-            try:
-                candidate = pd.read_csv(file_path, encoding=enc, on_bad_lines="skip", engine="python", sep=None)
-                if candidate.shape[1] > 1:
-                    df = candidate
-                    break
-                df = candidate  # keep as a fallback even if it's 1 column, in case nothing better is found
-            except Exception as e:
-                last_error = e
+        # Fast path: sniff the delimiter from a small SAMPLE only (a few KB, not
+        # the whole file), then parse the full file with pandas' fast C engine.
+        # This is what actually matters for large files — engine="python" with
+        # sep=None on the WHOLE file (the old approach) is dramatically slower
+        # and was causing uploads over a few MB to time out.
+        try:
+            import csv as csv_module
+            with open(file_path, "r", encoding=encoding, errors="replace") as f:
+                sample = f.read(65536)  # 64 KB is plenty to detect the delimiter
+            detected_sep = csv_module.Sniffer().sniff(sample, delimiters=",;\t|").delimiter
+            candidate = pd.read_csv(file_path, encoding=encoding, on_bad_lines="skip",
+                                     engine="c", sep=detected_sep, low_memory=False)
+            if candidate.shape[1] > 1:
+                df = candidate
+        except Exception as e:
+            last_error = e
 
-        # Second pass: if sniffing still produced a single jammed-together column,
-        # explicitly try the most common real-world delimiters
+        # Fallback 1: pandas' own sniffer (slower, python engine) — only runs if
+        # the fast sample-based sniff above didn't work
+        if df is None or df.shape[1] <= 1:
+            for enc in [encoding, "utf-8", "latin-1"]:
+                try:
+                    candidate = pd.read_csv(file_path, encoding=enc, on_bad_lines="skip", engine="python", sep=None)
+                    if candidate.shape[1] > 1:
+                        df = candidate
+                        break
+                    df = candidate
+                except Exception as e:
+                    last_error = e
+
+        # Fallback 2: explicitly try the most common real-world delimiters
         if df is None or df.shape[1] <= 1:
             for sep in [",", ";", "\t", "|"]:
                 try:
-                    candidate = pd.read_csv(file_path, encoding=encoding, on_bad_lines="skip", engine="python", sep=sep)
+                    candidate = pd.read_csv(file_path, encoding=encoding, on_bad_lines="skip", engine="c", sep=sep, low_memory=False)
                     if candidate.shape[1] > 1:
                         df = candidate
                         break
@@ -68,12 +86,20 @@ def read_file(file_path: str) -> pd.DataFrame:
 
     # ── Excel ──────────────────────────────────
     elif ext in [".xlsx", ".xls"]:
-        xl = pd.ExcelFile(file_path)
-        for sheet in xl.sheet_names:
-            df = pd.read_excel(file_path, sheet_name=sheet)
-            if len(df) > 0:
-                return df
-        return pd.read_excel(file_path)
+        # calamine (Rust-based) is ~5-6x faster than the default openpyxl engine
+        # for the same file — this was the other real cause of large-file upload
+        # timeouts, alongside the CSV parser fix above. Falls back to pandas'
+        # normal engine selection if calamine can't read a particular file
+        # (e.g. certain macro-enabled or unusually formatted workbooks).
+        try:
+            all_sheets = pd.read_excel(file_path, sheet_name=None, engine="calamine")
+        except Exception:
+            all_sheets = pd.read_excel(file_path, sheet_name=None)
+
+        for sheet_name, sheet_df in all_sheets.items():
+            if len(sheet_df) > 0:
+                return sheet_df
+        return next(iter(all_sheets.values()))
 
     # ── TSV / TXT ──────────────────────────────
     elif ext in [".tsv", ".txt"]:
@@ -194,7 +220,8 @@ def load_file_to_db(
         con       = engine,
         if_exists = "replace",
         index     = False,
-        method    = "multi"
+        method    = "multi",
+        chunksize = 1000
     )
 
     return {
@@ -266,7 +293,8 @@ def load_multiple_files(
             con       = engine,
             if_exists = "replace",
             index     = False,
-            method    = "multi"
+            method    = "multi",
+            chunksize = 1000
         )
 
         issues  = detect_issues(combined)
@@ -317,7 +345,8 @@ def load_multiple_files(
                 con       = engine,
                 if_exists = "replace",
                 index     = False,
-                method    = "multi"
+                method    = "multi",
+                chunksize = 1000
             )
 
             tables_created.append({
