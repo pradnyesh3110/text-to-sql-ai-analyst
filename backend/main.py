@@ -31,6 +31,7 @@ from jose import jwt, JWTError
 from fastapi.staticfiles import StaticFiles
 
 ADMIN_EMAILS = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()}
+MAX_FILES_FREE = 5  # free plan file-count cap; pro plan is unlimited (still bounded by storage_quota_mb)
 
 print("=" * 50)
 print("Loaded:", __file__)
@@ -288,6 +289,20 @@ async def upload_file(file: UploadFile = File(...), authorization: Optional[str]
                 UserFile.user_id == user.id,
                 UserFile.table_name == sanitize_table_name(user.id, file.filename)
             ).first()
+
+            # File-count limit: free plan caps at 5 files, pro plan is unlimited (still bounded by storage quota below)
+            if user.plan == "free" and not existing:
+                current_file_count = db.query(UserFile).filter(UserFile.user_id == user.id).count()
+                if current_file_count >= MAX_FILES_FREE:
+                    return {
+                        "success": False,
+                        "error": (
+                            f"Free plan is limited to {MAX_FILES_FREE} files — you already have {current_file_count}. "
+                            f"Delete an old file or upgrade to Pro for unlimited files."
+                        ),
+                        "action": "upgrade_or_delete"
+                    }
+
             projected_used = user.storage_used_mb - (existing.size_mb if existing else 0) + size_mb
             if projected_used > user.storage_quota_mb:
                 return {
@@ -353,7 +368,10 @@ def list_files(user: User = Depends(get_current_user), db: Session = Depends(get
             "rows": f.rows, "size_mb": f.size_mb, "uploaded_at": f.uploaded_at.isoformat()
         } for f in files],
         "storage_used_mb": round(user.storage_used_mb, 2),
-        "storage_quota_mb": user.storage_quota_mb
+        "storage_quota_mb": user.storage_quota_mb,
+        "file_count": len(files),
+        "max_files": None if user.plan != "free" else MAX_FILES_FREE,
+        "plan": user.plan
     }
 
 
