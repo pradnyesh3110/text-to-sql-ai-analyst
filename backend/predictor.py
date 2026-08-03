@@ -59,6 +59,21 @@ def detect_time_series(df: pd.DataFrame) -> dict:
     }
 
 
+def generate_local_forecast_narrative(value_col: str, date_col: str, method: str, stats: dict) -> str:
+    """Builds the forecast summary sentence entirely in Python — no LLM
+    call, so real data values never leave the server for this feature."""
+    trend_word = "risen" if stats["trend_pct"] > 0 else "fallen" if stats["trend_pct"] < 0 else "stayed flat"
+    parts = [
+        f'Based on {stats["data_points"]} historical points, "{value_col}" is forecasted using {method} '
+        f'for the next {stats["forecast_days"]} periods.',
+        f'The latest observed value was {stats["latest"]}, projected to reach {stats["forecast_next"]} '
+        f'— {trend_word} by about {abs(stats["trend_pct"])}%.'
+    ]
+    if abs(stats["trend_pct"]) > 20:
+        parts.append("That's a fairly large swing — worth checking for outliers or seasonality before acting on it.")
+    return " ".join(parts)
+
+
 def run_forecast(
     df        : pd.DataFrame,
     date_col  : str,
