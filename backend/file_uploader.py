@@ -35,12 +35,34 @@ def read_file(file_path: str) -> pd.DataFrame:
     # ── CSV ────────────────────────────────────
     if ext == ".csv":
         encoding = detect_encoding(file_path)
-        try:
-            df = pd.read_csv(file_path, encoding=encoding,on_bad_lines="skip",engine="python")
-        except Exception:
-            df = pd.read_csv(file_path, encoding="latin-1",on_bad_lines="skip",engine="python")
-        except Exception as e:
-            raise ValueError(f"Could not read CSV file. "f"Please check the file format. "f"Error: {str(e)}")
+        df = None
+        last_error = None
+
+        # First pass: let pandas sniff the delimiter (handles comma, semicolon, tab, pipe, etc.)
+        for enc in [encoding, "utf-8", "latin-1"]:
+            try:
+                candidate = pd.read_csv(file_path, encoding=enc, on_bad_lines="skip", engine="python", sep=None)
+                if candidate.shape[1] > 1:
+                    df = candidate
+                    break
+                df = candidate  # keep as a fallback even if it's 1 column, in case nothing better is found
+            except Exception as e:
+                last_error = e
+
+        # Second pass: if sniffing still produced a single jammed-together column,
+        # explicitly try the most common real-world delimiters
+        if df is None or df.shape[1] <= 1:
+            for sep in [",", ";", "\t", "|"]:
+                try:
+                    candidate = pd.read_csv(file_path, encoding=encoding, on_bad_lines="skip", engine="python", sep=sep)
+                    if candidate.shape[1] > 1:
+                        df = candidate
+                        break
+                except Exception as e:
+                    last_error = e
+
+        if df is None:
+            raise ValueError(f"Could not read CSV file. Please check the file format. Error: {last_error}")
 
         return df
 
