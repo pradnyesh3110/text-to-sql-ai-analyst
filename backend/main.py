@@ -1,22 +1,30 @@
 # backend/main.py
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Header, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+from typing import Optional
 import os
 import shutil
 import traceback
 
 load_dotenv()
 
-from backend.database         import engine
+from backend.database         import engine, get_db, User
 from backend.file_uploader    import load_file_to_db
 from backend.prompt_builder   import build_prompt
 from backend.llm_client       import get_sql_from_llm
 from backend.sql_executor     import execute_with_retry
 from backend.schema_extractor import get_schema_text
 from backend.rag.retriever    import get_similar_examples
+from backend.auth import (
+    hash_password, verify_password, create_token, get_current_user,
+    FREE_QUERY_LIMIT
+)
+from backend.auth import SECRET_KEY, ALGORITHM
+from jose import jwt, JWTError
 from fastapi.staticfiles import StaticFiles
 
 print("=" * 50)
@@ -56,6 +64,29 @@ class AutoMLRequest(BaseModel):
     target_col     : str   = ""
     clean_first    : bool  = True
 
+class RegisterRequest(BaseModel):
+    email   : str
+    password: str
+
+class LoginRequest(BaseModel):
+    email   : str
+    password: str
+
+
+def get_optional_user(authorization: Optional[str], db: Session):
+    """Best-effort JWT decode. Returns User or None. Never raises."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    token = authorization.split(" ", 1)[1].strip()
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        if not email:
+            return None
+        return db.query(User).filter(User.email == email).first()
+    except JWTError:
+        return None
+
 
 from fastapi.responses import FileResponse
 
@@ -66,6 +97,35 @@ def home():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.post("/register")
+def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == req.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = User(email=req.email, hashed_password=hash_password(req.password), query_count=0)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    token = create_token({"sub": user.email})
+    return {"success": True, "token": token, "email": user.email,
+            "query_count": user.query_count, "limit": FREE_QUERY_LIMIT}
+
+
+@app.post("/login")
+def login(req: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user or not verify_password(req.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = create_token({"sub": user.email})
+    return {"success": True, "token": token, "email": user.email,
+            "query_count": user.query_count, "limit": FREE_QUERY_LIMIT}
+
+
+@app.get("/me")
+def me(user: User = Depends(get_current_user)):
+    return {"email": user.email, "query_count": user.query_count, "limit": FREE_QUERY_LIMIT}
 
 
 @app.get("/schema")
@@ -138,14 +198,30 @@ async def upload_multiple_files(
 
 
 @app.post("/query")
-def query(req: QueryRequest):
+def query(req: QueryRequest, authorization: Optional[str] = Header(default=None),
+          db: Session = Depends(get_db)):
+    user = get_optional_user(authorization, db)
+    if user is not None and user.query_count >= FREE_QUERY_LIMIT:
+        raise HTTPException(status_code=403, detail={
+            "message": "Free demo limit reached",
+            "queries_used": user.query_count,
+            "limit": FREE_QUERY_LIMIT,
+            "action": "download_local"
+        })
     try:
         q            = req.question
         rag_examples = get_similar_examples(q, n=3)
         prompt       = build_prompt(q, rag_examples)
         sql          = get_sql_from_llm(prompt)
         result       = execute_with_retry(sql, q)
-        return {"question": q, "sql": sql, "result": result}
+        if user is not None:
+            user.query_count += 1
+            db.commit()
+        return {
+            "question": q, "sql": sql, "result": result,
+            "query_count": user.query_count if user is not None else None,
+            "limit": FREE_QUERY_LIMIT
+        }
     except Exception as e:
         traceback.print_exc()
         return {

@@ -1,278 +1,963 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Data Analyst</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            min-height: 100vh;
-        }
-        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #334155;
-        }
-        h1 { font-size: 2.5rem; color: #7c3aed; margin-bottom: 8px; }
-        .subtitle { color: #94a3b8; font-size: 1.1rem; }
-        
-        .card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.2rem;
-            color: #a78bfa;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        input[type="file"] {
-            color: #cbd5e1;
-            padding: 10px 0;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 14px 18px;
-            background: #0f172a;
-            border: 1px solid #475569;
-            border-radius: 10px;
-            color: #f1f5f9;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input[type="text"]:focus { border-color: #7c3aed; }
-        
-        button {
-            background: #7c3aed;
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 12px;
-        }
-        button:hover { background: #6d28d9; transform: translateY(-1px); }
-        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
-        
-        .status {
-            margin-top: 16px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 0.95rem;
-        }
-        .status.success { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
-        .status.error { background: #450a0a; color: #fca5a5; border: 1px solid #dc2626; }
-        .status.info { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; }
-        
-        .sql-box {
-            background: #0f172a;
-            border: 1px solid #475569;
-            border-radius: 10px;
-            padding: 16px;
-            font-family: 'Consolas', monospace;
-            font-size: 0.9rem;
-            color: #6ee7b7;
-            overflow-x: auto;
-            margin: 16px 0;
-            white-space: pre-wrap;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-            font-size: 0.9rem;
-        }
-        th {
-            background: #334155;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #c4b5fd;
-            border-bottom: 2px solid #475569;
-        }
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #334155;
-            color: #cbd5e1;
-        }
-        tr:hover { background: #252f47; }
-        
-        .hidden { display: none; }
-        .fade-in { animation: fadeIn 0.4s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .query-row { display: flex; gap: 12px; align-items: stretch; }
-        .query-row input { flex: 1; }
-        
-        footer {
-            text-align: center;
-            margin-top: 60px;
-            padding-top: 30px;
-            border-top: 1px solid #334155;
-            color: #64748b;
-            font-size: 0.85rem;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Data Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#f6f5fb;
+  --surface:#ffffff;
+  --surface2:#f1eefc;
+  --surface3:#e9e2fa;
+  --border:#e5e0f5;
+  --accent:#6d28d9;
+  --accent-dim:#5b21b6;
+  --accent2:#ff6b4a;
+  --success:#16a34a;
+  --warning:#d97706;
+  --danger:#e11d48;
+  --text:#1e1b2e;
+  --muted:#6f6885;
+  --code-bg:#1e1b2e;
+  --code-text:#5eead4;
+  --radius:14px;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-body);
+  background:
+    radial-gradient(1100px 550px at 12% -8%, rgba(109,40,217,.10), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(255,107,74,.10), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+
+/* ---------- Header ---------- */
+header.topbar{
+  position:sticky; top:0; z-index:40;
+  backdrop-filter:blur(14px);
+  background:rgba(246,245,251,.85);
+  border-bottom:1px solid var(--border);
+}
+.topbar-inner{
+  max-width:1080px; margin:0 auto; padding:14px 20px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand .mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  box-shadow:0 4px 14px rgba(109,40,217,.28);
+}
+.brand h1{
+  font-family:var(--font-display); font-size:1.15rem; font-weight:700; letter-spacing:-.02em;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--accent);
+}
+.brand span.tag{display:block;font-size:.68rem;color:var(--muted);font-weight:500;letter-spacing:.03em;}
+
+.header-right{display:flex;align-items:center;gap:14px;}
+
+/* Signature element: query fuel gauge */
+.fuel-gauge{display:flex;align-items:center;gap:10px;cursor:pointer;padding:5px 12px 5px 5px;border-radius:999px;border:1px solid var(--border);background:var(--surface);transition:border-color .2s;}
+.fuel-gauge:hover{border-color:var(--accent);}
+.fuel-ring{width:38px;height:38px;position:relative;}
+.fuel-ring svg{transform:rotate(-90deg);}
+.fuel-ring circle{fill:none;stroke-width:4;}
+.fuel-ring .track{stroke:var(--surface3);}
+.fuel-ring .fill{stroke:var(--accent2);stroke-linecap:round;transition:stroke-dashoffset .5s ease, stroke .3s ease;}
+.fuel-ring .fill.low{stroke:var(--danger);}
+.fuel-label{font-size:.72rem;line-height:1.15;color:var(--muted);font-weight:500;}
+.fuel-label b{color:var(--text);font-family:var(--font-display);font-size:.82rem;}
+
+.acct-btn{
+  background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  padding:9px 16px; border-radius:10px; font-size:.85rem; font-weight:600;
+  cursor:pointer; transition:all .15s; font-family:var(--font-body);
+}
+.acct-btn:hover{border-color:var(--accent); background:var(--surface3);}
+
+/* ---------- Tabs ---------- */
+nav.tabbar{max-width:1080px;margin:0 auto;padding:0 20px;overflow-x:auto;}
+.tabbar-inner{display:flex; gap:4px; padding:10px 0; min-width:max-content;}
+.tab-btn{
+  font-family:var(--font-display); font-weight:600; font-size:.82rem;
+  padding:9px 15px; border-radius:9px; border:1px solid transparent;
+  background:transparent; color:var(--muted); cursor:pointer; white-space:nowrap;
+  display:flex; align-items:center; gap:6px; transition:all .15s;
+}
+.tab-btn:hover{color:var(--text); background:var(--surface2);}
+.tab-btn.active{color:var(--text); background:var(--surface2); border-color:var(--border); box-shadow:inset 0 0 0 1px rgba(109,40,217,.22);}
+.tab-btn.active .dot{background:var(--accent2);}
+.tab-btn .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
+
+/* ---------- Layout ---------- */
+.container{max-width:1080px; margin:0 auto; padding:28px 20px 80px;}
+.panel{display:none;}
+.panel.active{display:block; animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:26px; margin-bottom:20px; box-shadow:0 8px 24px rgba(109,40,217,.06);
+}
+.card h2{
+  font-family:var(--font-display); font-size:1.05rem; font-weight:700;
+  margin-bottom:6px; display:flex; align-items:center; gap:9px; color:var(--text);
+}
+.card .desc{color:var(--muted); font-size:.87rem; margin-bottom:18px; line-height:1.5;}
+
+/* ---------- Form elements ---------- */
+input[type="file"]{color:var(--muted); padding:8px 0; font-size:.88rem;}
+input[type="text"],input[type="email"],input[type="password"],input[type="number"],textarea,select{
+  width:100%; padding:13px 16px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); font-size:.92rem; outline:none;
+  font-family:var(--font-body); transition:border-color .2s, background .2s;
+}
+input:focus,textarea:focus,select:focus{background:var(--surface);}
+textarea{resize:vertical; min-height:100px; font-family:var(--font-mono); font-size:.85rem;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+label.field-label{display:block; font-size:.78rem; color:var(--muted); font-weight:600; margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em;}
+
+button.btn{
+  background:var(--accent); color:#fff; border:none; padding:13px 24px;
+  border-radius:10px; font-size:.9rem; font-weight:700; cursor:pointer;
+  transition:all .15s; margin-top:4px; font-family:var(--font-display);
+  display:inline-flex; align-items:center; gap:8px;
+}
+button.btn:hover{background:var(--accent-dim); transform:translateY(-1px);}
+button.btn:disabled{background:var(--surface3); color:var(--muted); cursor:not-allowed; transform:none;}
+button.btn.ghost{background:transparent; border:1px solid var(--border); color:var(--text);}
+button.btn.ghost:hover{border-color:var(--accent); background:var(--surface2);}
+button.btn.small{padding:8px 16px; font-size:.8rem;}
+button.btn.full{width:100%; justify-content:center;}
+
+.status{margin-top:14px; padding:12px 16px; border-radius:10px; font-size:.87rem; line-height:1.5;}
+.status.success{background:rgba(22,163,74,.08); color:var(--success); border:1px solid rgba(22,163,74,.25);}
+.status.error{background:rgba(225,29,72,.07); color:var(--danger); border:1px solid rgba(225,29,72,.22);}
+.status.info{background:rgba(109,40,217,.07); color:var(--accent); border:1px solid rgba(109,40,217,.22);}
+.hidden{display:none !important;}
+
+.code-box{
+  background:var(--code-bg); border:1px solid var(--border); border-radius:10px; padding:16px;
+  font-family:var(--font-mono); font-size:.85rem; color:var(--code-text); overflow-x:auto;
+  margin:14px 0; white-space:pre-wrap; line-height:1.6;
+}
+
+table{width:100%; border-collapse:collapse; margin-top:14px; font-size:.85rem;}
+th{background:var(--surface2); padding:11px; text-align:left; font-weight:600; color:var(--accent); border-bottom:2px solid var(--border); font-family:var(--font-display); font-size:.78rem; text-transform:uppercase; letter-spacing:.03em;}
+td{padding:10px 11px; border-bottom:1px solid var(--border); color:var(--text);}
+tr:hover td{background:var(--surface2);}
+
+.query-row{display:flex; gap:10px; align-items:stretch;}
+.query-row input{flex:1;}
+
+.stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin:16px 0;}
+.stat-box{background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px;}
+.stat-box .num{font-family:var(--font-display); font-size:1.4rem; font-weight:700; color:var(--accent);}
+.stat-box .lbl{font-size:.72rem; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.03em;}
+
+.badge{display:inline-block; padding:3px 9px; border-radius:6px; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em;}
+.badge.high{background:rgba(225,29,72,.1); color:var(--danger);}
+.badge.medium{background:rgba(217,119,6,.12); color:var(--warning);}
+.badge.low{background:rgba(109,40,217,.1); color:var(--accent);}
+
+.issue-row{display:flex; align-items:flex-start; gap:12px; padding:13px 0; border-bottom:1px solid var(--border);}
+.issue-row:last-child{border-bottom:none;}
+.issue-row input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);}
+.issue-body{flex:1;}
+.issue-body .t{font-weight:600; font-size:.88rem; margin-bottom:2px;}
+.issue-body .s{font-size:.8rem; color:var(--muted);}
+
+.insight-row{display:flex; align-items:flex-start; gap:10px; padding:11px 0; border-bottom:1px solid var(--border); font-size:.87rem;}
+.insight-row:last-child{border-bottom:none;}
+
+.chart-wrap{background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:16px; margin:16px 0; height:280px;}
+
+footer{text-align:center; margin-top:50px; padding-top:26px; border-top:1px solid var(--border); color:var(--muted); font-size:.82rem;}
+footer p{margin-top:5px;}
+
+/* Modal */
+.modal-overlay{position:fixed; inset:0; background:rgba(6,9,18,.72); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:30px; max-width:420px; width:100%; box-shadow:0 20px 60px rgba(30,27,46,.2);}
+.modal h3{font-family:var(--font-display); font-size:1.15rem; margin-bottom:6px;}
+.modal p.sub{color:var(--muted); font-size:.86rem; margin-bottom:20px;}
+.modal .field{margin-bottom:14px;}
+.modal-switch{text-align:center; margin-top:16px; font-size:.85rem; color:var(--muted);}
+.modal-switch a{color:var(--accent2); cursor:pointer; font-weight:600;}
+.modal-close{position:absolute; top:14px; right:16px; background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;}
+.modal{position:relative;}
+
+.limit-modal .icon-big{font-size:2.6rem; margin-bottom:10px;}
+.limit-modal ul{margin:14px 0; padding-left:20px; color:var(--muted); font-size:.86rem; line-height:1.8;}
+
+.spinner{display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite;}
+button.btn.ghost .spinner{border-color:rgba(109,40,217,.25); border-top-color:var(--accent);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+.pill{padding:6px 13px; border-radius:999px; background:var(--surface2); border:1px solid var(--border); font-size:.78rem; color:var(--muted); font-weight:600;}
+
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media (max-width:640px){.two-col{grid-template-columns:1fr;}}
+
+.narrative-box{background:var(--surface2); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:16px 18px; margin-top:16px; font-size:.9rem; line-height:1.65; color:var(--text);}
+.narrative-box .tag{color:var(--accent2); font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:6px;}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🤖 AI Data Analyst</h1>
-            <p class="subtitle">Upload data → Ask in English → Get SQL + Results</p>
-        </header>
 
-        <!-- UPLOAD -->
-        <div class="card">
-            <h2>📁 Upload Your Data</h2>
-            <p style="color:#94a3b8; margin-bottom:12px;">CSV, Excel, JSON, PDF, TSV supported</p>
-            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.pdf,.tsv,.txt">
-            <button onclick="uploadFile()" id="uploadBtn">Upload File</button>
-            <div id="uploadStatus"></div>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="mark">🤖</div>
+      <div>
+        <h1>AI Data Analyst</h1>
+        <span class="tag">Text-to-SQL · RAG · AutoML</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="fuel-gauge" id="fuelGauge" onclick="openAcctModal()">
+        <div class="fuel-ring">
+          <svg width="38" height="38" viewBox="0 0 38 38">
+            <circle class="track" cx="19" cy="19" r="16"></circle>
+            <circle class="fill" id="fuelRingFill" cx="19" cy="19" r="16" stroke-dasharray="100.5" stroke-dashoffset="0"></circle>
+          </svg>
         </div>
+        <div class="fuel-label">Demo queries<br><b id="fuelText">100/100 left</b></div>
+      </div>
+      <button class="acct-btn" id="acctBtn" onclick="openAcctModal()">Sign in</button>
+    </div>
+  </div>
+  <nav class="tabbar"><div class="tabbar-inner" id="tabbarInner">
+    <button class="tab-btn active" data-tab="ask"><span class="dot"></span>Ask</button>
+    <button class="tab-btn" data-tab="quality"><span class="dot"></span>Data Quality</button>
+    <button class="tab-btn" data-tab="eda"><span class="dot"></span>EDA Report</button>
+    <button class="tab-btn" data-tab="forecast"><span class="dot"></span>Forecast</button>
+    <button class="tab-btn" data-tab="automl"><span class="dot"></span>AutoML</button>
+    <button class="tab-btn" data-tab="dax"><span class="dot"></span>DAX / Power BI</button>
+    <button class="tab-btn" data-tab="batch"><span class="dot"></span>Batch Query</button>
+  </div></nav>
+</header>
 
-        <!-- QUERY -->
-        <div class="card">
-            <h2>💬 Ask a Question</h2>
-            <div class="query-row">
-                <input type="text" id="questionInput" placeholder="e.g. How many rows? Which product has highest sales?" onkeypress="if(event.key==='Enter')askQuestion()">
-                <button onclick="askQuestion()" id="askBtn" style="margin-top:0;">Ask →</button>
-            </div>
-            <div id="queryStatus"></div>
-            
-            <div id="resultArea" class="hidden">
-                <p style="color:#a78bfa; font-weight:600; margin-top:20px;">Generated SQL:</p>
-                <div class="sql-box" id="sqlBox"></div>
-                
-                <p style="color:#a78bfa; font-weight:600; margin-top:20px;">Results:</p>
-                <div id="tableArea"></div>
-            </div>
-        </div>
+<div class="container">
 
-        <!-- SCHEMA -->
-        <div class="card">
-            <h2>🗂️ Database Schema</h2>
-            <button onclick="loadSchema()" id="schemaBtn">View Schema</button>
-            <div id="schemaArea" style="margin-top:16px;"></div>
-        </div>
-
-        <footer>
-            <p>🚀 Cloud Demo Mode — Powered by Groq AI</p>
-            <p style="margin-top:4px;">💡 Download the offline version for 100% privacy with local Ollama</p>
-        </footer>
+  <!-- ================= ASK TAB ================= -->
+  <div class="panel active" id="panel-ask">
+    <div class="card">
+      <h2>📁 Upload Your Data</h2>
+      <p class="desc">CSV, Excel, JSON, PDF, TSV supported</p>
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.pdf,.tsv,.txt">
+      <br><button class="btn" onclick="uploadFile()" id="uploadBtn">Upload file</button>
+      <div id="uploadStatus"></div>
     </div>
 
-    <script>
-        const API = ""; // Empty = same origin (served from Render)
-        
-        function showStatus(id, msg, type) {
-            const el = document.getElementById(id);
-            el.className = "status " + type + " fade-in";
-            el.textContent = msg;
-        }
-        
-        function clearStatus(id) {
-            document.getElementById(id).className = "hidden";
-        }
+    <div class="card">
+      <h2>💬 Ask a question</h2>
+      <p class="desc">Ask in plain English — I'll generate the SQL and run it.</p>
+      <div class="query-row">
+        <input type="text" id="questionInput" placeholder="e.g. Which product has the highest sales?" onkeypress="if(event.key==='Enter')askQuestion()">
+        <button class="btn" onclick="askQuestion()" id="askBtn" style="margin-top:0;">Ask →</button>
+      </div>
+      <div id="queryStatus"></div>
+      <div id="resultArea" class="hidden">
+        <p style="color:var(--accent2); font-weight:600; margin-top:18px; font-family:var(--font-display); font-size:.85rem; text-transform:uppercase; letter-spacing:.03em;">Generated SQL</p>
+        <div class="code-box" id="sqlBox"></div>
+        <p style="color:var(--accent2); font-weight:600; margin-top:18px; font-family:var(--font-display); font-size:.85rem; text-transform:uppercase; letter-spacing:.03em;">Results</p>
+        <div id="tableArea"></div>
+      </div>
+    </div>
 
-        async function uploadFile() {
-            const file = document.getElementById("fileInput").files[0];
-            if (!file) { showStatus("uploadStatus", "Please select a file first", "error"); return; }
-            
-            const btn = document.getElementById("uploadBtn");
-            btn.disabled = true; btn.textContent = "Uploading...";
-            clearStatus("uploadStatus");
-            
-            try {
-                const form = new FormData();
-                form.append("file", file);
-                const res = await fetch(API + "/upload", { method: "POST", body: form });
-                const data = await res.json();
-                
-                if (data.success) {
-                    showStatus("uploadStatus", `✅ ${data.message} | ${data.columns.length} columns | ${data.rows} rows`, "success");
-                } else {
-                    showStatus("uploadStatus", "❌ " + data.error, "error");
-                }
-            } catch (e) {
-                showStatus("uploadStatus", "❌ Network error — backend may be waking up, wait 30s and retry", "error");
-            }
-            btn.disabled = false; btn.textContent = "Upload File";
-        }
+    <div class="card">
+      <h2>🗂️ Database schema</h2>
+      <button class="btn ghost" onclick="loadSchema()" id="schemaBtn">View schema</button>
+      <div id="schemaArea" style="margin-top:16px;"></div>
+    </div>
+  </div>
 
-        async function askQuestion() {
-            const q = document.getElementById("questionInput").value.trim();
-            if (!q) { showStatus("queryStatus", "Please enter a question", "error"); return; }
-            
-            const btn = document.getElementById("askBtn");
-            btn.disabled = true; btn.textContent = "Thinking...";
-            clearStatus("queryStatus");
-            document.getElementById("resultArea").className = "hidden";
-            
-            try {
-                const res = await fetch(API + "/query", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question: q })
-                });
-                const data = await res.json();
-                
-                if (data.error) {
-                    showStatus("queryStatus", "❌ " + data.error, "error");
-                } else {
-                    document.getElementById("sqlBox").textContent = data.sql || "No SQL generated";
-                    
-                    const tableDiv = document.getElementById("tableArea");
-                    if (Array.isArray(data.result) && data.result.length > 0) {
-                        const cols = Object.keys(data.result[0]);
-                        let html = `<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>`;
-                        data.result.forEach(row => {
-                            html += `<tr>${cols.map(c => `<td>${row[c] ?? "—"}</td>`).join("")}</tr>`;
-                        });
-                        html += "</tbody></table>";
-                        tableDiv.innerHTML = html;
-                    } else {
-                        tableDiv.innerHTML = '<p style="color:#64748b;">No rows returned.</p>';
-                    }
-                    
-                    document.getElementById("resultArea").className = "fade-in";
-                }
-            } catch (e) {
-                showStatus("queryStatus", "❌ " + e.message, "error");
-            }
-            btn.disabled = false; btn.textContent = "Ask →";
-        }
+  <!-- ================= DATA QUALITY TAB ================= -->
+  <div class="panel" id="panel-quality">
+    <div class="card">
+      <h2>🧹 Data quality check</h2>
+      <p class="desc">Detected issues appear here after you upload a file in the Ask tab. Select the ones to fix and clean your dataset in one click.</p>
+      <div id="qualityEmpty" class="status info">Upload a file in the <b>Ask</b> tab first — issues detected there will show up here automatically.</div>
+      <div id="qualityList"></div>
+      <button class="btn hidden" id="cleanBtn" onclick="runClean()">Fix selected issues</button>
+      <div id="cleanStatus"></div>
+    </div>
+  </div>
 
-        async function loadSchema() {
-            const btn = document.getElementById("schemaBtn");
-            btn.disabled = true; btn.textContent = "Loading...";
-            
-            try {
-                const res = await fetch(API + "/schema");
-                const data = await res.json();
-                document.getElementById("schemaArea").innerHTML = `<pre style="background:#0f172a;padding:16px;border-radius:10px;border:1px solid #475569;overflow-x:auto;">${data.schema || "No schema available"}</pre>`;
-            } catch (e) {
-                document.getElementById("schemaArea").innerHTML = `<p style="color:#fca5a5;">Error loading schema</p>`;
-            }
-            btn.disabled = false; btn.textContent = "View Schema";
+  <!-- ================= EDA TAB ================= -->
+  <div class="panel" id="panel-eda">
+    <div class="card">
+      <h2>📊 Exploratory Data Analysis</h2>
+      <p class="desc">Full statistical report on your uploaded dataset — distributions, correlations, and auto-generated insights.</p>
+      <button class="btn" onclick="runEDA()" id="edaBtn">Generate EDA report</button>
+      <div id="edaStatus"></div>
+      <div id="edaResults" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ================= FORECAST TAB ================= -->
+  <div class="panel" id="panel-forecast">
+    <div class="card">
+      <h2>📈 Predict / Forecast</h2>
+      <p class="desc">Auto-detects a date and numeric column and forecasts future values (Prophet, with a linear fallback).</p>
+      <div class="two-col">
+        <div>
+          <label class="field-label">Periods to forecast</label>
+          <input type="number" id="forecastPeriods" value="30" min="1" max="365">
+        </div>
+        <div>
+          <label class="field-label">Value column (optional)</label>
+          <input type="text" id="forecastValueCol" placeholder="auto-detect">
+        </div>
+      </div>
+      <button class="btn" onclick="runForecast()" id="forecastBtn" style="margin-top:14px;">Run forecast</button>
+      <div id="forecastStatus"></div>
+      <div id="forecastResults" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ================= AUTOML TAB ================= -->
+  <div class="panel" id="panel-automl">
+    <div class="card">
+      <h2>🧠 AutoML</h2>
+      <p class="desc">Trains and compares models to predict a target column of your choice.</p>
+      <label class="field-label">Target column (optional — auto-suggested otherwise)</label>
+      <input type="text" id="automlTarget" placeholder="e.g. sales_amount">
+      <button class="btn" onclick="runAutoML()" id="automlBtn" style="margin-top:14px;">Run AutoML</button>
+      <div id="automlStatus"></div>
+      <div id="automlResults" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ================= DAX / POWER BI TAB ================= -->
+  <div class="panel" id="panel-dax">
+    <div class="card">
+      <h2>🧮 DAX generator</h2>
+      <p class="desc">Describe a measure in plain English and get ready-to-paste Power BI DAX code.</p>
+      <div class="query-row">
+        <input type="text" id="daxQuestion" placeholder="e.g. total sales, average price, count of orders">
+        <button class="btn" onclick="runDax()" id="daxBtn" style="margin-top:0;">Generate →</button>
+      </div>
+      <div id="daxResults" class="hidden"></div>
+    </div>
+
+    <div class="card">
+      <h2>⚡ Power BI template</h2>
+      <p class="desc">Download a ready-made .pbit template pre-wired with DAX measures for your uploaded table.</p>
+      <button class="btn ghost" onclick="downloadPBI()" id="pbiBtn">⬇ Download .pbit template</button>
+      <div id="pbiStatus"></div>
+    </div>
+  </div>
+
+  <!-- ================= BATCH TAB ================= -->
+  <div class="panel" id="panel-batch">
+    <div class="card">
+      <h2>📚 Batch query</h2>
+      <p class="desc">Run up to 15 questions in one go — one question per line.</p>
+      <textarea id="batchQuestions" placeholder="How many total rows?&#10;What is the average sales?&#10;Which category sells the most?"></textarea>
+      <button class="btn" onclick="runBatch()" id="batchBtn" style="margin-top:12px;">Run batch</button>
+      <div id="batchStatus"></div>
+      <div id="batchResults"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>🚀 Cloud demo mode — powered by Groq AI · limited to 100 free queries</p>
+    <p>💡 Download the offline version for unlimited use, full AutoML, and 100% local privacy with Ollama</p>
+  </footer>
+</div>
+
+<!-- ================= ACCOUNT MODAL ================= -->
+<div class="modal-overlay" id="acctModalOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('acctModalOverlay')">✕</button>
+    <div id="acctModalLoggedOut">
+      <h3 id="acctModalTitle">Sign in</h3>
+      <p class="sub">Signing in saves your query count to your account so it persists across devices.</p>
+      <div class="field">
+        <label class="field-label">Email</label>
+        <input type="email" id="acctEmail" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label class="field-label">Password</label>
+        <input type="password" id="acctPassword" placeholder="••••••••">
+      </div>
+      <button class="btn full" id="acctSubmitBtn" onclick="submitAuth()">Sign in</button>
+      <div id="acctStatus"></div>
+      <div class="modal-switch" id="acctSwitchWrap">
+        Don't have an account? <a onclick="toggleAuthMode()">Create one</a>
+      </div>
+    </div>
+    <div id="acctModalLoggedIn" class="hidden">
+      <h3>Your account</h3>
+      <p class="sub" id="acctLoggedInEmail"></p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="num" id="acctQueryCount">0</div><div class="lbl">Queries used</div></div>
+        <div class="stat-box"><div class="num">100</div><div class="lbl">Free limit</div></div>
+      </div>
+      <button class="btn ghost full" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LIMIT REACHED MODAL ================= -->
+<div class="modal-overlay" id="limitModalOverlay">
+  <div class="modal limit-modal">
+    <button class="modal-close" onclick="closeModal('limitModalOverlay')">✕</button>
+    <div class="icon-big">⛽</div>
+    <h3>You've used all 100 free queries</h3>
+    <p class="sub">Cloud demo mode caps usage to keep things running for everyone. To keep going:</p>
+    <ul>
+      <li>Sign in — doesn't add more queries, but keeps your usage synced across devices</li>
+      <li>Download the local version for unlimited queries, full AutoML training, and complete data privacy</li>
+    </ul>
+    <button class="btn full" onclick="window.open('https://github.com/pradnyesh3110/text-to-sql-ai-analyst','_blank')">⬇ Download local version</button>
+    <button class="btn ghost full" style="margin-top:10px;" onclick="closeModal('limitModalOverlay')">Maybe later</button>
+  </div>
+</div>
+
+<script>
+const API = "";
+const LIMIT = 100;
+const GOOGLE_CLIENT_ID = "310870577299-sfu6pbl2rikbg5hih0jrjtjn6jfgn94b.apps.googleusercontent.com";
+let token = localStorage.getItem('t2s_token') || null;
+let userEmail = localStorage.getItem('t2s_email') || null;
+let guestCount = parseInt(localStorage.getItem('t2s_guest_count') || '0', 10);
+let authMode = 'login'; // or 'register'
+let lastUploadIssues = [];
+let charts = {}; // keep chart instances to destroy on re-render
+
+/* ---------------- Tabs ---------------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------------- Helpers ---------------- */
+function showStatus(id, msg, type){
+  const el = document.getElementById(id);
+  el.className = "status " + type;
+  el.innerHTML = msg;
+}
+function clearStatus(id){ document.getElementById(id).className = "hidden"; }
+function authHeaders(){ return token ? {"Authorization":"Bearer "+token} : {}; }
+function openModal(id){ document.getElementById(id).classList.add('active'); }
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+
+function updateFuelGauge(){
+  const used = token ? (window.serverQueryCount ?? 0) : guestCount;
+  const remaining = Math.max(0, LIMIT - used);
+  const circumference = 100.5;
+  const offset = circumference * (used / LIMIT);
+  const ring = document.getElementById('fuelRingFill');
+  ring.style.strokeDashoffset = Math.min(circumference, offset);
+  ring.classList.toggle('low', remaining <= 2);
+  document.getElementById('fuelText').textContent = `${remaining}/${LIMIT} left`;
+  document.getElementById('acctBtn').textContent = token ? (userEmail || 'Account') : 'Sign in';
+}
+
+function handleLimitReached(){
+  openModal('limitModalOverlay');
+}
+
+function trackQueryResponse(data){
+  if (data && data.query_count !== null && data.query_count !== undefined){
+    window.serverQueryCount = data.query_count;
+  } else if (!token){
+    guestCount += 1;
+    localStorage.setItem('t2s_guest_count', guestCount);
+  }
+  updateFuelGauge();
+}
+
+/* ---------------- Account modal ---------------- */
+function openAcctModal(){
+  if (token){
+    document.getElementById('acctModalLoggedOut').classList.add('hidden');
+    document.getElementById('acctModalLoggedIn').classList.remove('hidden');
+    document.getElementById('acctLoggedInEmail').textContent = userEmail;
+    document.getElementById('acctQueryCount').textContent = window.serverQueryCount ?? 0;
+  } else {
+    document.getElementById('acctModalLoggedOut').classList.remove('hidden');
+    document.getElementById('acctModalLoggedIn').classList.add('hidden');
+  }
+  openModal('acctModalOverlay');
+}
+function toggleAuthMode(){
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('acctModalTitle').textContent = authMode === 'login' ? 'Sign in' : 'Create account';
+  document.getElementById('acctSubmitBtn').textContent = authMode === 'login' ? 'Sign in' : 'Create account';
+  document.getElementById('acctSwitchWrap').innerHTML = authMode === 'login'
+    ? `Don't have an account? <a onclick="toggleAuthMode()">Create one</a>`
+    : `Already have an account? <a onclick="toggleAuthMode()">Sign in</a>`;
+  clearStatus('acctStatus');
+}
+async function submitAuth(){
+  const email = document.getElementById('acctEmail').value.trim();
+  const password = document.getElementById('acctPassword').value;
+  if (!email || !password){ showStatus('acctStatus','Enter an email and password','error'); return; }
+  const btn = document.getElementById('acctSubmitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try{
+    const res = await fetch(API + '/' + authMode, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if (!res.ok){
+      showStatus('acctStatus', '❌ ' + (data.detail || 'Something went wrong'), 'error');
+    } else {
+      token = data.token; userEmail = data.email;
+      window.serverQueryCount = data.query_count;
+      localStorage.setItem('t2s_token', token);
+      localStorage.setItem('t2s_email', userEmail);
+      updateFuelGauge();
+      closeModal('acctModalOverlay');
+    }
+  } catch(e){
+    showStatus('acctStatus', '❌ Network error', 'error');
+  }
+  btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign in' : 'Create account';
+}
+function logout(){
+  token = null; userEmail = null; window.serverQueryCount = 0;
+  localStorage.removeItem('t2s_token'); localStorage.removeItem('t2s_email');
+  updateFuelGauge();
+  closeModal('acctModalOverlay');
+}
+
+/* ---------------- Upload ---------------- */
+async function uploadFile(){
+  const file = document.getElementById("fileInput").files[0];
+  if (!file){ showStatus("uploadStatus", "Please select a file first", "error"); return; }
+  const btn = document.getElementById("uploadBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Uploading...';
+  clearStatus("uploadStatus");
+  try{
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(API + "/upload", { method:"POST", body: form });
+    const data = await res.json();
+    if (data.success){
+      showStatus("uploadStatus", `✅ ${data.message} · ${data.columns.length} columns · ${data.rows} rows`, "success");
+      lastUploadIssues = data.issues || [];
+      renderQualityList();
+    } else {
+      showStatus("uploadStatus", "❌ " + data.error, "error");
+    }
+  } catch(e){
+    showStatus("uploadStatus", "❌ Network error — backend may be waking up, wait 30s and retry", "error");
+  }
+  btn.disabled = false; btn.textContent = "Upload file";
+}
+
+/* ---------------- Ask / Query ---------------- */
+async function askQuestion(){
+  const q = document.getElementById("questionInput").value.trim();
+  if (!q){ showStatus("queryStatus", "Please enter a question", "error"); return; }
+  const currentUsed = token ? (window.serverQueryCount ?? 0) : guestCount;
+  if (currentUsed >= LIMIT){ handleLimitReached(); return; }
+
+  const btn = document.getElementById("askBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  clearStatus("queryStatus");
+  document.getElementById("resultArea").className = "hidden";
+
+  try{
+    const res = await fetch(API + "/query", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", ...authHeaders() },
+      body: JSON.stringify({ question: q })
+    });
+    if (res.status === 403){ handleLimitReached(); btn.disabled=false; btn.textContent="Ask →"; return; }
+    const data = await res.json();
+    if (data.error){
+      showStatus("queryStatus", "❌ " + data.error, "error");
+    } else {
+      document.getElementById("sqlBox").textContent = data.sql || "No SQL generated";
+      const tableDiv = document.getElementById("tableArea");
+      if (Array.isArray(data.result) && data.result.length > 0){
+        const cols = Object.keys(data.result[0]);
+        let html = `<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+        data.result.forEach(row => {
+          html += `<tr>${cols.map(c => `<td>${row[c] ?? "—"}</td>`).join("")}</tr>`;
+        });
+        html += "</tbody></table>";
+        tableDiv.innerHTML = html;
+      } else {
+        tableDiv.innerHTML = '<p style="color:var(--muted);">No rows returned.</p>';
+      }
+      document.getElementById("resultArea").className = "";
+      trackQueryResponse(data);
+    }
+  } catch(e){
+    showStatus("queryStatus", "❌ " + e.message, "error");
+  }
+  btn.disabled = false; btn.textContent = "Ask →";
+}
+
+async function loadSchema(){
+  const btn = document.getElementById("schemaBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try{
+    const res = await fetch(API + "/schema");
+    const data = await res.json();
+    document.getElementById("schemaArea").innerHTML = `<div class="code-box">${(data.schema || "No schema available").replace(/</g,"&lt;")}</div>`;
+  } catch(e){
+    document.getElementById("schemaArea").innerHTML = `<p style="color:var(--danger);">Error loading schema</p>`;
+  }
+  btn.disabled = false; btn.textContent = "View schema";
+}
+
+/* ---------------- Data Quality ---------------- */
+function renderQualityList(){
+  const listEl = document.getElementById('qualityList');
+  const emptyEl = document.getElementById('qualityEmpty');
+  const cleanBtn = document.getElementById('cleanBtn');
+  if (!lastUploadIssues.length){
+    listEl.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+    if (window.__uploadedOnce) emptyEl.innerHTML = '<span class="status success" style="display:block;">✅ No issues detected — your data looks clean!</span>';
+    cleanBtn.classList.add('hidden');
+    return;
+  }
+  window.__uploadedOnce = true;
+  emptyEl.classList.add('hidden');
+  cleanBtn.classList.remove('hidden');
+  listEl.innerHTML = lastUploadIssues.map((iss, i) => `
+    <div class="issue-row">
+      <input type="checkbox" id="iss_${i}" checked>
+      <div class="issue-body">
+        <div class="t">${iss.type.replace(/_/g,' ')} <span class="badge ${iss.severity}">${iss.severity}</span></div>
+        <div class="s">Column: <b>${iss.column}</b> · ${iss.count} rows (${iss.percentage}%) — ${iss.suggestion}</div>
+      </div>
+    </div>
+  `).join('');
+}
+async function runClean(){
+  const selected = lastUploadIssues.filter((_, i) => document.getElementById('iss_'+i).checked);
+  if (!selected.length){ showStatus('cleanStatus','Select at least one issue to fix','error'); return; }
+  const btn = document.getElementById('cleanBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Cleaning...';
+  clearStatus('cleanStatus');
+  try{
+    const res = await fetch(API + '/clean', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ actions: selected })
+    });
+    const data = await res.json();
+    if (data.success){
+      showStatus('cleanStatus', `✅ Cleaned ${data.rows_before - data.rows_after} rows removed · ${data.rows_after} rows remain`, 'success');
+      lastUploadIssues = data.remaining_issues || [];
+      renderQualityList();
+    } else {
+      showStatus('cleanStatus', '❌ ' + data.error, 'error');
+    }
+  } catch(e){
+    showStatus('cleanStatus', '❌ Network error', 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Fix selected issues';
+}
+
+/* ---------------- EDA ---------------- */
+async function runEDA(){
+  const btn = document.getElementById('edaBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  clearStatus('edaStatus');
+  document.getElementById('edaResults').classList.add('hidden');
+  try{
+    const res = await fetch(API + '/eda');
+    const data = await res.json();
+    if (data.error){ showStatus('edaStatus', '❌ ' + data.error, 'error'); btn.disabled=false; btn.textContent='Generate EDA report'; return; }
+
+    const ov = data.overview;
+    let html = `<div class="stat-grid">
+      <div class="stat-box"><div class="num">${ov.total_rows}</div><div class="lbl">Rows</div></div>
+      <div class="stat-box"><div class="num">${ov.total_columns}</div><div class="lbl">Columns</div></div>
+      <div class="stat-box"><div class="num">${ov.missing_pct}%</div><div class="lbl">Missing</div></div>
+      <div class="stat-box"><div class="num">${ov.duplicate_rows}</div><div class="lbl">Duplicates</div></div>
+    </div>
+    <div class="chart-wrap"><canvas id="edaChart"></canvas></div>
+    <p style="font-family:var(--font-display); font-weight:700; margin:18px 0 6px; font-size:.9rem;">Columns</p>
+    <table><thead><tr><th>Column</th><th>Type</th><th>Missing</th><th>Unique</th><th>Details</th></tr></thead><tbody>`;
+    data.columns.forEach(c => {
+      const details = c.type === 'numeric'
+        ? `min ${c.min} · max ${c.max} · mean ${c.mean} · ${c.shape}`
+        : (c.top_values && c.top_values[0] ? `most common: "${c.top_values[0].value}"` : '—');
+      html += `<tr><td><b>${c.name}</b></td><td>${c.type}</td><td>${c.missing_pct}%</td><td>${c.unique}</td><td>${details}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+
+    if (data.correlations && data.correlations.length){
+      html += `<p style="font-family:var(--font-display); font-weight:700; margin:18px 0 6px; font-size:.9rem;">Top correlations</p>
+      <table><thead><tr><th>Column A</th><th>Column B</th><th>Correlation</th><th>Strength</th></tr></thead><tbody>`;
+      data.correlations.forEach(c => {
+        html += `<tr><td>${c.col1}</td><td>${c.col2}</td><td>${c.correlation}</td><td>${c.strength} (${c.direction})</td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    if (data.insights && data.insights.length){
+      html += `<p style="font-family:var(--font-display); font-weight:700; margin:18px 0 6px; font-size:.9rem;">Insights</p>`;
+      data.insights.forEach(ins => {
+        html += `<div class="insight-row"><span>${ins.icon}</span><span>${ins.message}</span></div>`;
+      });
+    }
+    if (data.narrative){
+      html += `<div class="narrative-box"><span class="tag">AI Summary</span>${data.narrative}</div>`;
+    }
+    document.getElementById('edaResults').innerHTML = html;
+    document.getElementById('edaResults').classList.remove('hidden');
+
+    // Missing % chart per column
+    if (charts.eda) charts.eda.destroy();
+    const ctx = document.getElementById('edaChart');
+    charts.eda = new Chart(ctx, {
+      type: 'bar',
+      data:{
+        labels: data.columns.map(c=>c.name),
+        datasets:[{ label:'Missing %', data: data.columns.map(c=>c.missing_pct), backgroundColor:'#6d28d9', borderRadius:6 }]
+      },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, title:{display:true, text:'Missing values by column (%)', color:'#1e1b2e'} },
+        scales:{ x:{ ticks:{color:'#6f6885'}, grid:{color:'#e5e0f5'} }, y:{ ticks:{color:'#6f6885'}, grid:{color:'#e5e0f5'} } }
+      }
+    });
+  } catch(e){
+    showStatus('edaStatus', '❌ ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Generate EDA report';
+}
+
+/* ---------------- Forecast ---------------- */
+async function runForecast(){
+  const periods = parseInt(document.getElementById('forecastPeriods').value || '30', 10);
+  const valueCol = document.getElementById('forecastValueCol').value.trim();
+  const btn = document.getElementById('forecastBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Forecasting...';
+  clearStatus('forecastStatus');
+  document.getElementById('forecastResults').classList.add('hidden');
+  try{
+    const res = await fetch(API + '/predict', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ periods, value_col: valueCol, date_col: '' })
+    });
+    const data = await res.json();
+    if (!data.success){ showStatus('forecastStatus', '❌ ' + (data.error || 'Forecast failed'), 'error'); btn.disabled=false; btn.textContent='Run forecast'; return; }
+
+    const s = data.stats;
+    let html = `<div class="pill-row"><span class="pill">${data.method}</span><span class="pill">${data.value_col} over ${data.date_col}</span></div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num">${s.latest}</div><div class="lbl">Latest</div></div>
+      <div class="stat-box"><div class="num">${s.forecast_next}</div><div class="lbl">Forecast next</div></div>
+      <div class="stat-box"><div class="num">${s.trend_pct}%</div><div class="lbl">Trend ${s.trend_dir}</div></div>
+      <div class="stat-box"><div class="num">${s.data_points}</div><div class="lbl">Data points</div></div>
+    </div>
+    <div class="chart-wrap"><canvas id="forecastChart"></canvas></div>`;
+    if (data.narrative) html += `<div class="narrative-box"><span class="tag">AI Summary</span>${data.narrative}</div>`;
+    document.getElementById('forecastResults').innerHTML = html;
+    document.getElementById('forecastResults').classList.remove('hidden');
+
+    if (charts.forecast) charts.forecast.destroy();
+    const labels = [...data.actual.map(a=>a.date), ...data.predicted.map(p=>p.date)];
+    const actualData = [...data.actual.map(a=>a.value), ...data.predicted.map(()=>null)];
+    const predData = [...data.actual.map(()=>null), ...data.predicted.map(p=>p.value)];
+    charts.forecast = new Chart(document.getElementById('forecastChart'), {
+      type:'line',
+      data:{ labels, datasets:[
+        { label:'Actual', data:actualData, borderColor:'#6d28d9', backgroundColor:'transparent', tension:.3, pointRadius:0 },
+        { label:'Forecast', data:predData, borderColor:'#ff6b4a', backgroundColor:'transparent', borderDash:[5,4], tension:.3, pointRadius:0 }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ labels:{color:'#1e1b2e'} } },
+        scales:{ x:{ ticks:{color:'#6f6885', maxTicksLimit:10}, grid:{color:'#e5e0f5'} }, y:{ ticks:{color:'#6f6885'}, grid:{color:'#e5e0f5'} } }
+      }
+    });
+  } catch(e){
+    showStatus('forecastStatus', '❌ ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Run forecast';
+}
+
+/* ---------------- AutoML ---------------- */
+async function runAutoML(){
+  const targetCol = document.getElementById('automlTarget').value.trim();
+  const btn = document.getElementById('automlBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Training...';
+  clearStatus('automlStatus');
+  document.getElementById('automlResults').classList.add('hidden');
+  try{
+    const res = await fetch(API + '/automl', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ target_col: targetCol, target_accuracy: 0.85, clean_first: true })
+    });
+    const data = await res.json();
+    let html = '';
+    if (!data.success){
+      // Cloud demo stub — show a nice explainer instead of a bare error
+      html = `<div class="status info" style="margin-bottom:16px;">
+        <b>⚙️ AutoML needs the local version</b><br>
+        ${data.error || 'Full model training (scikit-learn / XGBoost) runs in the local deployment, not the cloud demo.'}
+      </div>`;
+      if (data.dataset_info){
+        const info = data.dataset_info;
+        html += `<div class="stat-grid">
+          <div class="stat-box"><div class="num">${info.row_count ?? '—'}</div><div class="lbl">Rows</div></div>
+          <div class="stat-box"><div class="num">${info.column_count ?? '—'}</div><div class="lbl">Columns</div></div>
+          <div class="stat-box"><div class="num">${(info.potential_targets||[]).length}</div><div class="lbl">Potential targets</div></div>
+        </div>`;
+        if (info.potential_targets && info.potential_targets.length){
+          html += `<div class="pill-row">${info.potential_targets.map(t=>`<span class="pill">${t}</span>`).join('')}</div>`;
         }
-    </script>
+      }
+      if (data.recommendation){
+        html += `<p style="margin-top:10px; color:var(--muted); font-size:.87rem;">Recommended approach: <b style="color:var(--text);">${data.recommendation}</b></p>`;
+      }
+      html += `<button class="btn full" style="margin-top:18px;" onclick="window.open('https://github.com/pradnyesh3110/text-to-sql-ai-analyst','_blank')">⬇ Download local version to run full training</button>`;
+    } else {
+      const ml = data.ml_result;
+      html = `<div class="stat-grid">
+        <div class="stat-box"><div class="num">${ml.best_model}</div><div class="lbl">Best model</div></div>
+        <div class="stat-box"><div class="num">${ml.best_accuracy_pct}</div><div class="lbl">Accuracy</div></div>
+        <div class="stat-box"><div class="num">${data.cleaned_issues}</div><div class="lbl">Issues auto-fixed</div></div>
+      </div>`;
+      if (ml.feature_importance && ml.feature_importance.length){
+        html += `<p style="font-family:var(--font-display); font-weight:700; margin:16px 0 6px; font-size:.9rem;">Top features</p>
+        <table><thead><tr><th>Feature</th><th>Importance</th></tr></thead><tbody>`;
+        ml.feature_importance.forEach(f => html += `<tr><td>${f.feature}</td><td>${f.pct}%</td></tr>`);
+        html += `</tbody></table>`;
+      }
+      if (data.narrative) html += `<div class="narrative-box"><span class="tag">AI Summary</span>${data.narrative}</div>`;
+    }
+    document.getElementById('automlResults').innerHTML = html;
+    document.getElementById('automlResults').classList.remove('hidden');
+  } catch(e){
+    showStatus('automlStatus', '❌ ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Run AutoML';
+}
+
+/* ---------------- DAX ---------------- */
+async function runDax(){
+  const q = document.getElementById('daxQuestion').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('daxBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try{
+    const res = await fetch(API + '/dax', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ question: q })
+    });
+    const data = await res.json();
+    const html = `<div class="code-box">${data.dax}</div>
+    <p style="font-family:var(--font-display); font-weight:700; margin:14px 0 6px; font-size:.85rem;">How to use it</p>
+    <ol style="padding-left:20px; color:var(--muted); font-size:.87rem; line-height:1.9; list-style:none;">${data.instructions.map(i=>`<li>${i}</li>`).join('')}</ol>`;
+    document.getElementById('daxResults').innerHTML = html;
+    document.getElementById('daxResults').classList.remove('hidden');
+  } catch(e){
+    document.getElementById('daxResults').innerHTML = `<p style="color:var(--danger);">Error generating DAX</p>`;
+  }
+  btn.disabled = false; btn.textContent = 'Generate →';
+}
+
+/* ---------------- Power BI Template ---------------- */
+async function downloadPBI(){
+  const btn = document.getElementById('pbiBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Building template...';
+  clearStatus('pbiStatus');
+  try{
+    const res = await fetch(API + '/download-pbi-template', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ dax_measures: [], chart_type:'bar', table_name:'user_data' })
+    });
+    if (!res.ok){ showStatus('pbiStatus', '❌ Could not build template — upload data first', 'error'); btn.disabled=false; btn.textContent='⬇ Download .pbit template'; return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'AI_Dashboard.pbit';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showStatus('pbiStatus', '✅ Template downloaded — open it in Power BI Desktop', 'success');
+  } catch(e){
+    showStatus('pbiStatus', '❌ ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = '⬇ Download .pbit template';
+}
+
+/* ---------------- Batch ---------------- */
+async function runBatch(){
+  const raw = document.getElementById('batchQuestions').value;
+  const questions = raw.split(String.fromCharCode(10)).map(q=>q.trim()).filter(Boolean).slice(0,15);
+  if (!questions.length){ showStatus('batchStatus','Enter at least one question','error'); return; }
+  const btn = document.getElementById('batchBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Running ' + questions.length + ' queries...';
+  clearStatus('batchStatus');
+  document.getElementById('batchResults').innerHTML = '';
+  try{
+    const res = await fetch(API + '/batch', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ questions })
+    });
+    const data = await res.json();
+    if (data.error){ showStatus('batchStatus', '❌ ' + data.error, 'error'); btn.disabled=false; btn.textContent='Run batch'; return; }
+    showStatus('batchStatus', `✅ ${data.success}/${data.total} succeeded`, 'success');
+    let html = '';
+    data.results.forEach((r,i) => {
+      html += `<div class="card" style="padding:18px; margin-bottom:12px;">
+        <div style="font-weight:600; margin-bottom:8px;">${i+1}. ${r.question}</div>`;
+      if (r.status === 'success'){
+        html += `<div class="code-box" style="margin:8px 0;">${r.sql}</div>`;
+        if (Array.isArray(r.result) && r.result.length){
+          const cols = Object.keys(r.result[0]);
+          html += `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+          r.result.slice(0,5).forEach(row => { html += `<tr>${cols.map(c=>`<td>${row[c] ?? '—'}</td>`).join('')}</tr>`; });
+          html += `</tbody></table>`;
+        }
+      } else {
+        html += `<div class="status error">❌ ${r.error}</div>`;
+      }
+      html += `</div>`;
+    });
+    document.getElementById('batchResults').innerHTML = html;
+  } catch(e){
+    showStatus('batchStatus', '❌ ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Run batch';
+}
+
+/* ---------------- Init ---------------- */
+(async function init(){
+  if (token){
+    try{
+      const res = await fetch(API + '/me', { headers: authHeaders() });
+      if (res.ok){ const data = await res.json(); window.serverQueryCount = data.query_count; }
+      else { logout(); }
+    } catch(e){}
+  }
+  updateFuelGauge();
+})();
+</script>
 </body>
 </html>

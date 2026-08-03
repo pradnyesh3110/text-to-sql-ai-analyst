@@ -46,7 +46,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 # ─── Query Limit Check ────────────────────────────────
-FREE_QUERY_LIMIT = 10
+FREE_QUERY_LIMIT = 100
 
 def check_query_limit(user: User, db: Session):
     if user.query_count >= FREE_QUERY_LIMIT:
