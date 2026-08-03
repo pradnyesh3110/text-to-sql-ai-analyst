@@ -590,17 +590,53 @@ def schema_details(authorization: Optional[str] = Header(default=None), db: Sess
             allowed = {"user_data"}
         inspector = inspect(engine)
         tables    = {}
+
+        def singularize(word: str) -> str:
+            return word[:-1] if word.endswith("s") and len(word) > 1 else word
+
+        def strip_owner_prefix(name: str) -> str:
+            # sanitize_table_name() always produces "u{user_id}_{filename}" —
+            # strip that prefix so name-matching compares the actual file/table
+            # names ("customers", "orders"), not the internal storage key.
+            return re.sub(r"^u\d+_", "", name.lower())
+
         for table in inspector.get_table_names():
             if table not in allowed:
                 continue
             cols     = inspector.get_columns(table)
             pk_cols  = inspector.get_pk_constraint(table)
             fk_cols  = inspector.get_foreign_keys(table)
-            pk_names = pk_cols.get("constrained_columns", [])
+            pk_names = set(pk_cols.get("constrained_columns", []))
             fk_names = {
                 fk["constrained_columns"][0]: fk["referred_table"]
                 for fk in fk_cols if fk["constrained_columns"]
             }
+
+            # CSV-uploaded tables never have real PK/FK constraints in Postgres —
+            # fall back to name-based heuristics when no real constraint exists.
+            table_singular = singularize(strip_owner_prefix(table))
+            col_names_lower = [c["name"].lower() for c in cols]
+            if not pk_names:
+                for i, cname in enumerate(col_names_lower):
+                    if cname == "id" or cname == f"{table_singular}_id" or (i == 0 and cname.endswith("_id")):
+                        pk_names = {cols[i]["name"]}
+                        break
+            if not fk_names:
+                pk_names_lower = {p.lower() for p in pk_names}
+                for c in cols:
+                    cname = c["name"].lower()
+                    if cname in pk_names_lower:
+                        continue
+                    if cname.endswith("_id"):
+                        prefix = cname[:-3]
+                        for other_table in allowed:
+                            if other_table == table:
+                                continue
+                            other_clean = strip_owner_prefix(other_table)
+                            if singularize(other_clean) == prefix or other_clean == prefix + "s":
+                                fk_names[c["name"]] = other_table
+                                break
+
             columns = []
             for c in cols:
                 col_name = c["name"]
