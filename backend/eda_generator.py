@@ -229,6 +229,41 @@ def safe(val):
         return None
 
 
+def generate_local_narrative(eda: dict) -> str:
+    """Builds the EDA summary paragraph entirely in Python — no LLM call,
+    so real data values never leave the server for this feature."""
+    ov = eda["overview"]
+    parts = [
+        f"This dataset has {ov['total_rows']:,} rows and {ov['total_columns']} columns "
+        f"({ov['numeric_columns']} numeric, {ov['text_columns']} text, {ov['date_columns']} date-like)."
+    ]
+    if ov["missing_pct"] > 0:
+        parts.append(f"{ov['missing_pct']}% of all cells are missing.")
+    else:
+        parts.append("No missing values were found.")
+    if ov["duplicate_rows"] > 0:
+        parts.append(f"{ov['duplicate_rows']} duplicate rows should probably be removed before analysis.")
+
+    numeric_cols = [c for c in eda["columns"] if c.get("type") == "numeric"]
+    if numeric_cols:
+        widest = max(numeric_cols, key=lambda c: (c.get("max") or 0) - (c.get("min") or 0))
+        parts.append(f'"{widest["name"]}" ranges from {widest.get("min")} to {widest.get("max")} (mean {widest.get("mean")}).')
+
+    strong_corrs = [c for c in eda.get("correlations", []) if c["strength"] == "strong"]
+    if strong_corrs:
+        c = strong_corrs[0]
+        parts.append(f'The strongest relationship found is a {c["direction"]} correlation ({c["correlation"]}) between "{c["col1"]}" and "{c["col2"]}".')
+
+    skewed = [c for c in eda["columns"] if c.get("shape") in ("right-skewed", "left-skewed")]
+    if skewed:
+        parts.append(f'"{skewed[0]["name"]}" is {skewed[0]["shape"]} — a log transform may help if you model it.')
+
+    if ov["missing_pct"] < 5 and ov["duplicate_rows"] == 0:
+        parts.append("Overall, data quality looks solid.")
+
+    return " ".join(parts)
+
+
 def get_eda_summary_for_llm(eda: dict) -> str:
     lines = [
         f"Dataset: {eda['filename']}",
