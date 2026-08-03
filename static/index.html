@@ -800,6 +800,7 @@ async function uploadFile(){
       lastUploadIssues = data.issues || [];
       renderQualityList();
       if (token) fetchMyFiles();
+      showAddAnotherPrompt();
     } else {
       showStatus("uploadStatus", "❌ " + data.error, "error");
     }
@@ -807,6 +808,32 @@ async function uploadFile(){
     showStatus("uploadStatus", "❌ Network error — backend may be waking up, wait 30s and retry", "error");
   }
   btn.disabled = false; btn.textContent = "Upload file";
+}
+
+function showAddAnotherPrompt(){
+  const el = document.getElementById("uploadStatus");
+  el.insertAdjacentHTML('afterend', `
+    <div class="status info" id="addAnotherPrompt" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <span>Upload another file?</span>
+      <span style="display:flex; gap:8px;">
+        <button class="btn small" onclick="handleAddAnother(true)">Yes</button>
+        <button class="btn ghost small" onclick="handleAddAnother(false)">No</button>
+      </span>
+    </div>
+  `);
+}
+
+function handleAddAnother(wantsAnother){
+  const prompt = document.getElementById('addAnotherPrompt');
+  if (prompt) prompt.remove();
+  document.getElementById('fileInput').value = '';
+  if (wantsAnother){
+    // Yes — this file is already saved; clear the picker and wait for the next one
+    document.getElementById('fileInput').click();
+  } else {
+    // No — finalize: refresh the schema view to reflect everything uploaded so far
+    loadSchema();
+  }
 }
 
 /* ---------------- My Files ---------------- */
