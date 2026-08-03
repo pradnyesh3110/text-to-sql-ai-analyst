@@ -14,7 +14,7 @@ import traceback
 
 load_dotenv()
 
-from backend.database         import engine, get_db, User, UserFile
+from backend.database         import engine, get_db, User, UserFile, QueryLog
 from backend.file_uploader    import load_file_to_db
 from backend.prompt_builder   import build_prompt
 from backend.llm_client       import get_sql_from_llm
@@ -79,6 +79,11 @@ class ChartRequest(BaseModel):
     previous_spec: dict = None
     chart_type   : str = None
 
+class FeedbackRequest(BaseModel):
+    query_log_id: int
+    helpful     : bool
+    note        : str = None
+
 class RegisterRequest(BaseModel):
     email   : str
     password: str
@@ -119,6 +124,28 @@ def sanitize_table_name(user_id: int, filename: str) -> str:
     base = re.sub(r"[^a-z0-9_]", "_", base)
     base = re.sub(r"_+", "_", base).strip("_")[:40]
     return f"u{user_id}_{base or 'file'}"
+
+
+def resolve_upload_table_name(user_id: int, filename: str, db: Session):
+    """Returns (table_name, existing_UserFile_or_None).
+    Two different filenames can sanitize down to the same table name
+    (especially after truncation), so this checks the ORIGINAL filename
+    too — only reuses/overwrites a table if it's genuinely a re-upload
+    of the same file, otherwise appends a numeric suffix so the new
+    file gets its own table instead of silently overwriting another."""
+    base_name = sanitize_table_name(user_id, filename)
+    candidate = base_name
+    suffix = 1
+    while True:
+        row = db.query(UserFile).filter(
+            UserFile.user_id == user_id, UserFile.table_name == candidate
+        ).first()
+        if row is None:
+            return candidate, None
+        if row.original_filename == filename:
+            return candidate, row
+        suffix += 1
+        candidate = f"{base_name}_{suffix}"[:60]
 
 
 def get_user_files(user: User, db: Session):
@@ -255,6 +282,37 @@ def admin_list_users(user: User = Depends(get_current_user), db: Session = Depen
             "expired_subscribers": sum(1 for u in users if u.subscription_status == "expired")}
 
 
+@app.post("/feedback")
+def submit_feedback(req: FeedbackRequest, db: Session = Depends(get_db)):
+    """Lets a user flag a query result as wrong (or confirm it was right).
+    This doesn't fix the answer automatically — there's no reliable way
+    to auto-detect a semantically wrong-but-successfully-executed query —
+    it logs it so you can review real failure patterns and improve the
+    prompt over time."""
+    log_entry = db.query(QueryLog).filter(QueryLog.id == req.query_log_id).first()
+    if not log_entry:
+        raise HTTPException(status_code=404, detail="Query not found")
+    log_entry.feedback = "helpful" if req.helpful else "wrong"
+    log_entry.feedback_note = req.note
+    db.commit()
+    return {"success": True}
+
+
+@app.get("/admin/flagged-queries")
+def admin_flagged_queries(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access only")
+    logs = db.query(QueryLog).filter(QueryLog.feedback == "wrong").order_by(QueryLog.created_at.desc()).limit(200).all()
+    return {
+        "total_flagged": len(logs),
+        "queries": [{
+            "id": l.id, "question": l.question, "sql": l.sql_generated,
+            "table": l.table_name, "row_count": l.row_count,
+            "note": l.feedback_note, "created_at": l.created_at.isoformat()
+        } for l in logs]
+    }
+
+
 @app.get("/schema")
 def schema(authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
     user = get_optional_user(authorization, db)
@@ -285,13 +343,11 @@ async def upload_file(file: UploadFile = File(...), authorization: Optional[str]
 
         if user is not None:
             user = sync_subscription_status(user, db)
-            existing = db.query(UserFile).filter(
-                UserFile.user_id == user.id,
-                UserFile.table_name == sanitize_table_name(user.id, file.filename)
-            ).first()
+            table_name, existing = resolve_upload_table_name(user.id, file.filename, db)
 
-            # File-count limit: free plan caps at 5 files, pro plan is unlimited (still bounded by storage quota below)
-            if user.plan == "free" and not existing:
+            # File-count limit: free plan caps at 5 files, pro plan is unlimited (still bounded by storage quota below).
+            # Admin/master accounts bypass this entirely.
+            if user.plan == "free" and not existing and not user.is_admin:
                 current_file_count = db.query(UserFile).filter(UserFile.user_id == user.id).count()
                 if current_file_count >= MAX_FILES_FREE:
                     return {
@@ -304,7 +360,7 @@ async def upload_file(file: UploadFile = File(...), authorization: Optional[str]
                     }
 
             projected_used = user.storage_used_mb - (existing.size_mb if existing else 0) + size_mb
-            if projected_used > user.storage_quota_mb:
+            if projected_used > user.storage_quota_mb and not user.is_admin:
                 return {
                     "success": False,
                     "error": (
@@ -314,7 +370,6 @@ async def upload_file(file: UploadFile = File(...), authorization: Optional[str]
                     ),
                     "action": "upgrade_or_delete"
                 }
-            table_name = sanitize_table_name(user.id, file.filename)
         else:
             table_name = "user_data"
 
@@ -370,7 +425,7 @@ def list_files(user: User = Depends(get_current_user), db: Session = Depends(get
         "storage_used_mb": round(user.storage_used_mb, 2),
         "storage_quota_mb": user.storage_quota_mb,
         "file_count": len(files),
-        "max_files": None if user.plan != "free" else MAX_FILES_FREE,
+        "max_files": None if (user.plan != "free" or user.is_admin) else MAX_FILES_FREE,
         "plan": user.plan
     }
 
@@ -427,7 +482,7 @@ async def upload_multiple_files(
 def query(req: QueryRequest, authorization: Optional[str] = Header(default=None),
           db: Session = Depends(get_db)):
     user = get_optional_user(authorization, db)
-    if user is not None and user.query_count >= FREE_QUERY_LIMIT:
+    if user is not None and not user.is_admin and user.query_count >= FREE_QUERY_LIMIT:
         raise HTTPException(status_code=403, detail={
             "message": "Free demo limit reached",
             "queries_used": user.query_count,
@@ -472,9 +527,21 @@ def query(req: QueryRequest, authorization: Optional[str] = Header(default=None)
         if user is not None:
             user.query_count += 1
             db.commit()
+
+        row_count = len(result) if isinstance(result, list) else None
+        log_entry = QueryLog(
+            user_id=user.id if user is not None else None,
+            question=q, sql_generated=sql,
+            table_name=primary_table, row_count=row_count
+        )
+        db.add(log_entry)
+        db.commit()
+        db.refresh(log_entry)
+
         return {
             "question": q, "sql": sql, "result": result,
             "matched_file": matched_file,
+            "query_log_id": log_entry.id,
             "query_count": user.query_count if user is not None else None,
             "limit": FREE_QUERY_LIMIT
         }
