@@ -300,6 +300,10 @@ select.table-select{width:100%; padding:13px 16px; background:var(--surface2); b
       <p class="desc">CSV, Excel, JSON, PDF, TSV supported. Signed-in uploads are saved permanently to your account (Postgres/Supabase) — nothing gets overwritten.</p>
       <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.pdf,.tsv,.txt">
       <br><button class="btn" onclick="uploadFile()" id="uploadBtn">Upload file</button>
+      <div class="storage-bar-wrap hidden" id="uploadProgressWrap" style="margin-top:14px;">
+        <div class="storage-bar-track"><div class="storage-bar-fill" id="uploadProgressFill" style="width:0%;"></div></div>
+        <div class="storage-bar-label" id="uploadProgressLabel">0%</div>
+      </div>
       <div id="uploadStatus"></div>
     </div>
 
@@ -551,7 +555,7 @@ select.table-select{width:100%; padding:13px 16px; background:var(--surface2); b
 
 <script>
 const API = "";
-const LIMIT = 500;
+const LIMIT = 100;
 // Replace with your own OAuth Client ID from https://console.cloud.google.com/apis/credentials
 // (Google Sign-In button is skipped automatically if this is left blank)
 const GOOGLE_CLIENT_ID = "523626225433-8qf4d5uos4trjs12foljufn4l0o7b4qq.apps.googleusercontent.com";
@@ -802,25 +806,54 @@ function logout(){
 }
 
 /* ---------------- Upload ---------------- */
-async function uploadFile(){
+function uploadFile(){
   const file = document.getElementById("fileInput").files[0];
   if (!file){ showStatus("uploadStatus", "Please select a file first", "error"); return; }
   const btn = document.getElementById("uploadBtn");
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Uploading...';
   clearStatus("uploadStatus");
-  try{
-    const form = new FormData();
-    form.append("file", file);
-    const res = await fetch(API + "/upload", { method:"POST", headers: authHeaders(), body: form });
-    const data = await res.json();
+
+  const progressWrap  = document.getElementById('uploadProgressWrap');
+  const progressFill   = document.getElementById('uploadProgressFill');
+  const progressLabel  = document.getElementById('uploadProgressLabel');
+  progressWrap.classList.remove('hidden');
+  progressFill.style.width = '0%';
+  progressFill.classList.remove('full');
+  progressLabel.textContent = '0%';
+
+  const form = new FormData();
+  form.append("file", file);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", API + "/upload");
+  const auth = authHeaders();
+  if (auth.Authorization) xhr.setRequestHeader("Authorization", auth.Authorization);
+
+  // Real progress, driven by actual bytes sent — not a guess
+  xhr.upload.onprogress = function(e){
+    if (!e.lengthComputable) return;
+    const pct = Math.round((e.loaded / e.total) * 100);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = pct + '%';
+    if (pct >= 100){
+      progressLabel.textContent = 'Processing on server…';
+      btn.innerHTML = '<span class="spinner"></span> Processing...';
+    }
+  };
+
+  xhr.onload = function(){
+    btn.disabled = false; btn.textContent = "Upload file";
+    progressWrap.classList.add('hidden');
+    let data;
+    try{ data = JSON.parse(xhr.responseText); }
+    catch(e){ showStatus("uploadStatus", "❌ Network error — backend may be waking up, wait 30s and retry", "error"); return; }
+
     if (data.success){
       let msg = `✅ ${data.message} · ${data.columns.length} columns · ${data.rows} rows`;
       const oldBanner = document.getElementById('uploadConfirmBanner');
       if (oldBanner) oldBanner.remove();
       let confirmHtml = '';
       if (data.storage){
-        // storage is only present when the backend recognized an authenticated user —
-        // this is the definitive signal the file was actually saved under your account
         confirmHtml = `<div class="status success" id="uploadConfirmBanner" style="margin-top:10px;">
           ☁️ <b>Saved permanently to your account</b> — table <code>${data.table}</code> on Postgres/Neon ·
           ${data.storage.used_mb}/${data.storage.quota_mb} MB used
@@ -840,10 +873,15 @@ async function uploadFile(){
     } else {
       showStatus("uploadStatus", "❌ " + data.error, "error");
     }
-  } catch(e){
+  };
+
+  xhr.onerror = function(){
+    btn.disabled = false; btn.textContent = "Upload file";
+    progressWrap.classList.add('hidden');
     showStatus("uploadStatus", "❌ Network error — backend may be waking up, wait 30s and retry", "error");
-  }
-  btn.disabled = false; btn.textContent = "Upload file";
+  };
+
+  xhr.send(form);
 }
 
 function showAddAnotherPrompt(){
